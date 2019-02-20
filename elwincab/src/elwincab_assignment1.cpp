@@ -25,7 +25,7 @@
 
 #include "../include/global.h"
 #include "../include/logger.h"
-
+#include "../include/server.h"
 using namespace std;
 
 /**
@@ -35,8 +35,8 @@ using namespace std;
  * @param  argv The argument list
  * @return 0 EXIT_SUCCESS
  */
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv){
+	if(argc != 3) {fprintf(stderr, "Usage: ./assignmetnt1 <'s' or 'c'> <PORT>\n"); return 1;}
 	/*Init. Logger*/
 	cse4589_init_log(argv[2]);
 
@@ -44,6 +44,16 @@ int main(int argc, char **argv)
     fclose(fopen(LOGFILE, "w"));
 
 	/*Start Here*/
+	string mode = argv[1];
+	string port = argv[2];
+	string tmp = "s";
 	
+	if(mode.compare(tmp) == 0){
+		Server server(port);
+		server.start_server();
+	}else {
+		//client.start_client();
+	}
+
 	return 0;
 }
