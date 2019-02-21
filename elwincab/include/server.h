@@ -17,20 +17,22 @@ class Server{
 
 private:
   int listen_socket;
+  int max_socket;
   int portnum;
   char serv_hostname[BUFFER_MAX];
   char serv_ip[INET_ADDRSTRLEN];
-  struct addrinfo *ai_results;
-  struct addrinfo hints;
-  struct sockaddr_in *sa_in;
+  struct addrinfo *ai;
+  struct sockaddr_in *sa;
   fd_set master_fds;
   fd_set read_fds;
   vector<string> cmds;
-  vector<int> accepted_sockets;
-  vector<string> cli_hostname_ip;
+  vector<int> conn_socks;
+  vector<struct sockaddr_storage> conn_cli;
 
   int populate_addr(string hostname_or_ip);
-  int get_socket_and_bind();
+  int sock_and_bind();
+  void handle_shell_cmds();
+  int handle_new_conn_request();
 
 public:
   Server(string port);
@@ -39,9 +41,6 @@ public:
   string get_hostname();
   string get_ip();
   void debug_dump();
-  /*void cmd_statistics();
-  void cmd_blocked();*/
-
 };
 
 #endif // SERVER_H

@@ -4,6 +4,8 @@
 #define HOSTNAME_LEN 128
 #define PATH_LEN 256
 #define BUFFER_MAX 256
+#define STDIN 0
+//#define BACKLOG 5
 
 /**
 Below is the definition of addrinfo:
