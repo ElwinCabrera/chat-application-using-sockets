@@ -29,10 +29,12 @@ private:
   vector<int> conn_socks;
   vector<struct sockaddr_storage> conn_cli;
 
-  int populate_addr(string hostname_or_ip);
+  int populate_addr(string hname_or_ip);
   int sock_and_bind();
   void handle_shell_cmds();
   int handle_new_conn_request();
+  int recv_data_from_conn_sock(int idx_socket);
+  int close_remote_conn(int socket);
 
 public:
   Server(string port);
