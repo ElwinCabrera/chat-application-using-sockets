@@ -5,7 +5,24 @@
 #define PATH_LEN 256
 #define BUFFER_MAX 256
 #define STDIN 0
-//#define BACKLOG 5
+
+#define BROADIP "255.255.255.255"
+
+#define AUTHOR "AUTHOR"
+#define IP "IP"
+#define PORT "PORT"
+#define LIST "LIST"
+
+#define BROADCAST "STATISTICS"
+#define BROADCAST "BLOCKED"
+
+#define BROADCAST "BROADCAST"
+#define SEND "SEND"
+#define BLOCK "BLOCK"
+#define UNBLOCK "UNBLOCK"
+#define REFRESH "REFRESH"
+#define LOGOUT "LOGOUT"
+
 
 /**
 Below is the definition of addrinfo:
@@ -19,6 +36,11 @@ Below is the definition of addrinfo:
  struct sockaddr *ai_addr; // struct sockaddr_in or _in6
  char *ai_canonname; // full canonical hostname
  struct addrinfo *ai_next; // linked list, next node
+};
+
+struct sockaddr {
+ unsigned short sa_family; // address family, AF_xxx
+ char sa_data[14]; // 14 bytes of protocol address
 };
 
 // (IPv4 only--see struct sockaddr_in6 for IPv6)

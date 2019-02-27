@@ -11,6 +11,7 @@ void shell_execute(vector<string> cmds);
 void cmd_success_start(string cmd);
 void cmd_fail_start(string cmd);
 void cmd_end(string cmd);
+void cmd_error(string cmd);
 void cmd_author();
 void cmd_ip();
 void cmd_port();
