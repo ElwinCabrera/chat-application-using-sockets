@@ -204,6 +204,7 @@ int Server::handle_new_conn_request(){
   cout<< "Remote client connected\n";
   string ip = get_ip_from_sa(&cli_addr);
   it = stored_msgs.find(ip);
+  
 
   if(it  != stored_msgs.end()){
     cout<< "You got some new messages while you were away"<<endl;
