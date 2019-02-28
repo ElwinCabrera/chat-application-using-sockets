@@ -66,34 +66,3 @@ void cmd_author(){
   cse4589_print_and_log("I, elwincab, have read and understood the course academic integrity policy.\n");
   cmd_end("AUTHOR");
 }
-
-
-void cmd_login(){
-
-}
-
-void cmd_refresh(){
-
-}
-
-void cmd_send(){
-}
-
-void cmd_broadcast(){
-
-}
-
-void cmd_block(){
-
-}
-void cmd_unblock(){
-
-}
-
-void cmd_logout(){
-
-}
-
-void cmd_exit(){
-
-}

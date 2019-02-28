@@ -69,6 +69,7 @@ Server::~Server()  {
   if(ai) freeaddrinfo(ai);
   //if(sa) free(sa);
   close(listen_socket);
+  //free all elements in conn_his
   //for (int i =0; i<conn_socks.size(); i++) cout << "socket: " <<conn_socks.at(i)<<endl;
 }
 
