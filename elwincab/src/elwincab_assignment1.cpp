@@ -26,6 +26,7 @@
 #include "../include/global.h"
 #include "../include/logger.h"
 #include "../include/server.h"
+#include "../include/client.h"
 using namespace std;
 
 /**
@@ -47,13 +48,20 @@ int main(int argc, char **argv){
 	string mode = argv[1];
 	string port = argv[2];
 	string tmp = "s";
+
+	Server *server;
+	Client *client;
 	
 	if(mode.compare(tmp) == 0){
-		Server server(port);
+		server = new Server(port);
 		server.start_server();
 	}else {
-		//client.start_client();
+		client = new Clinet(port);
+		client.start_client();
 	}
+
+	if(server) free(server);
+	if(clinet) free(clinet);
 
 	return 0;
 }

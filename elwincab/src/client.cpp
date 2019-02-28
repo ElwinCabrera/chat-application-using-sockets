@@ -30,8 +30,8 @@ using std::stringstream;
 using std::map;
 using std::pair;
 
-//recv(client_socketfd, &server_response, sizeof(server_response),0);
-//send(server, msg, strlen(msg), 0)
+//int recv(int sockfd, void *buf, int len, int flags);
+//int send(int sockfd, const void *msg, int len, int flags); 
 Client::Client(string serv_port){
     char hname[HOSTNAME_LEN];
     gethostname(hname, sizeof(hname));
@@ -48,16 +48,69 @@ Client::Client(string serv_port){
     max_socket = my_socket;
 
     loggedin = false;
+    exit_program = false;
 }
 
 Client::~Client(){
+    if(my_saddr) free(my_saddr);
+    if(server_saddr) free(server_saddr);
 
 }
 
 void Clinet::start_clinent(){
 
+    debug_dump();
+
+  cout<<"> ";
+
+  while(!exit_program){
+    memcpy(&read_fds, &master_fds, sizeof(master_fds));
+
+    int select_res = select(max_socket +1, &read_fds, NULL, NULL, NULL);
+    if(select_res <0) cout<< "Select failed\n";
+
+    for (int i = 0; i <=max_socket; i++) {
+      if(FD_ISSET(i, &read_fds)) {  // true = at least one socket is ready to be read
+        //find the socket that is ready
+        if(i == STDIN){ // 0 = stdin
+          //process stdin commands here
+          handle_shell_cmds();
+
+        } else if(i == my_socket){ // ready to receve data from remote host
+          //handle_new_conn_request();
+
+        } else { 
+          //recv_data_from_conn_sock(i);
+
+        }
+      }
+    }
+	}
+
 }
 
+void handle_shell_cmds(){
+    cmds.erase(cmds.begin(),cmds.end());
+    string cmd, token;
+    cin >> cmd;
+    stringstream cmd_ss(cmd);
+    while (getline(cmd_ss, token, ' ')) cmds.push_back(token); 
+
+    if (cmds.at(0).compare(AUTHOR) == 0) cmd_author();
+    if (cmds.at(0).compare(IP) == 0) cmd_ip(my_ip);
+    if (cmds.at(0).compare(PORT) == 0) cmd_port(serv_port);
+    if (cmds.at(0).compare(LIST) == 0) cmd_list();
+
+    if(cmds.at(0).compare(LOGIN) == 0) ;
+    //I think I can get away with just sending the whole string to the server and letting the server handle it.
+    /*if(cmds.at(0).compare(REFRESH) == 0) ;
+    if(cmds.at(0).compare(SEND) == 0);
+    if(cmds.at(0).compare(BROADCAST) == 0);
+    if(cmds.at(0).compare(BLOCK) == 0);
+    if(cmds.at(0).compare(UNBLOCK) == 0);
+    if(cmds.at(0).compare(LOGOUT) == 0);*/
+    if(cmds.at(0).compare(EXIT) == 0) exit_program = true;
+}
 
 struct addrinfo& Client::populate_addr(string hname_or_ip, int port){
   struct addrinfo *ai;
@@ -94,7 +147,7 @@ void cmd_login(){
 
 }
 
-void cmd_refresh(){
+/*void cmd_refresh(){
 
 }
 
@@ -114,8 +167,4 @@ void cmd_unblock(){
 
 void cmd_logout(){
 
-}
-
-void cmd_exit(){
-
-}
+}*/

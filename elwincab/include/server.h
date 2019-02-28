@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <map>
 #include "global.h"
+#include "shell.h"
 
 using std::string;
 using std::vector;

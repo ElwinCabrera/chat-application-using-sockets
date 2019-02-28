@@ -5,51 +5,13 @@
 #include "../include/shell.h"
 #include "../include/global.h"
 #include "../include/logger.h"
-//#include "../include/client.h"
+#include "../include/client.h"
 #include "../include/server.h"
 
 using std::vector;
 using std::string;
 using std::cout;
 using std::endl;
-
-
-void shell_execute(vector<string> cmds){
-
-  if(cmds.at(0).compare(AUTHOR) == 0){ // here down general cmds
-    cmd_author();
-
-  } else if (cmds.at(0).compare(IP) == 0){
-
-  } else if(cmds.at(0).compare(PORT) == 0) {
-
-  } else if(cmds.at(0).compare(LIST) == 0)  {
-
-  } else if(cmds.at(0).compare(STATISTICS) == 0)  { //here down start server cmds
-
-  } else if(cmds.at(0).compare(BLOCKED) == 0)  {
-
-  } else if(cmds.at(0).compare(LOGIN) == 0)  { //here down start client cmds
-
-  } else if(cmds.at(0).compare(REFRESH) == 0)  {
-
-  } else if(cmds.at(0).compare(SEND) == 0)  {
-
-  } else if(cmds.at(0).compare(BROADCAST) == 0)  {
-
-  } else if(cmds.at(0).compare(BLOCK) == 0)  {
-
-  } else if(cmds.at(0).compare(UNBLOCK) == 0)  {
-
-  } else if(cmds.at(0).compare(LOGOUT) == 0)  {
-
-  } else if(cmds.at(0).compare(EXIT) == 0)  {
-
-  } else {
-    cout << "unknown command"<<endl;
-  }
-
-}
 
 void cmd_success_start(string cmd){ cse4589_print_and_log("[%s:SUCCESS]\n", cmd.c_str());}
 void cmd_fail_start(string cmd){ cse4589_print_and_log("[%s:ERROR]\n", cmd.c_str());}
@@ -65,4 +27,22 @@ void cmd_author(){
   cmd_success_start("AUTHOR");
   cse4589_print_and_log("I, elwincab, have read and understood the course academic integrity policy.\n");
   cmd_end("AUTHOR");
+}
+
+void cmd_ip(string ip){
+  if (ip == "") {cmd_error("IP"); return;}
+  cmd_success_start("IP");
+  cse4589_print_and_log("IP:%s\n", ip.c_str());
+  cmd_end("IP");
+}
+
+void cmd_port(int portnum){
+  if (portnum <= 0) {cmd_error("PORT"); return;}
+  cmd_success_start("PORT");
+  cse4589_print_and_log("PORT:%d\n", portnum);
+  cmd_end("PORT");
+}
+
+bool is_valid_ip(string ip){
+
 }

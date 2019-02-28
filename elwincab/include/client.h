@@ -36,6 +36,7 @@ private:
     int max_socket;
     int my_socket;
     bool loggedin;
+    bool exit_program;
     vector<string> cmds;
     vector<struct peer_info*> peers;
 

@@ -158,8 +158,8 @@ void Server::handle_shell_cmds(){
   stringstream cmd_ss(cmd);
   while (getline(cmd_ss, token, ' ')) {cmds.push_back(token);}
   if(cmds.at(0).compare(AUTHOR) == 0) cmd_author();
-  if (cmds.at(0).compare(IP) == 0) cmd_ip();
-  if(cmds.at(0).compare(PORT) == 0) cmd_port();
+  if (cmds.at(0).compare(IP) == 0) cmd_ip(serv_ip);
+  if(cmds.at(0).compare(PORT) == 0) cmd_port(portnum);
   if(cmds.at(0).compare(LIST) == 0) cmd_list();
   if(cmds.at(0).compare(STATISTICS) == 0) cmd_statistics();
   if(cmds.at(0).compare(BLOCKED) == 0) cmd_blocked(get_rmhi_from_ip(cmds.at(1)));
@@ -416,19 +416,7 @@ struct remotehos_info* Server::get_rmhi_from_sock(int sock){
                                   /* SHELL CMDs */
 
 
-void Server::cmd_ip(){
-  if (serv_ip == "") {cmd_error("IP"); return;}
-  cmd_success_start("IP");
-  cse4589_print_and_log("IP:%s\n", serv_ip);
-  cmd_end("IP");
-}
 
-void Server::cmd_port(){
-  if (portnum <= 0) {cmd_error("PORT"); return;}
-  cmd_success_start("PORT");
-  cse4589_print_and_log("PORT:%d\n", portnum);
-  cmd_end("PORT");
-}
 
 void Server::cmd_list(){ //get list of logged in hosts sorted by port number
 
