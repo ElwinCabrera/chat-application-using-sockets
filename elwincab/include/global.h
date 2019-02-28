@@ -13,15 +13,17 @@
 #define PORT "PORT"
 #define LIST "LIST"
 
-#define BROADCAST "STATISTICS"
-#define BROADCAST "BLOCKED"
+#define STATISTICS "STATISTICS"
+#define BLOCKED "BLOCKED"
 
+#define LOGIN "LOGIN"
 #define BROADCAST "BROADCAST"
 #define SEND "SEND"
 #define BLOCK "BLOCK"
 #define UNBLOCK "UNBLOCK"
 #define REFRESH "REFRESH"
 #define LOGOUT "LOGOUT"
+#define EXIT "EXIT"
 
 
 /**

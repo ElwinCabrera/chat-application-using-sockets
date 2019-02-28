@@ -58,7 +58,7 @@ void cmd_end(string cmd){ cse4589_print_and_log("[%s:END]\n", cmd.c_str());}
 
 void cmd_error(string cmd){
   cmd_fail_start(cmd);
-  cmd_end(cmd)
+  cmd_end(cmd);
 }
 
 void cmd_author(){
