@@ -40,6 +40,7 @@ private:
     vector<string> cmds;
     vector<struct peer_info*> peers;
 
+    debug_dump();
 
 public:
 

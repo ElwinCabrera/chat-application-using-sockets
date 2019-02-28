@@ -76,10 +76,10 @@ void Clinet::start_clinent(){
           //process stdin commands here
           handle_shell_cmds();
 
-        } else if(i == my_socket){ // ready to receve data from remote host
+        } else if(i == my_socket){ // ready to receve data from CONNECTED remote host or if doing p2p then peer is requesting to be connected to us
           //handle_new_conn_request();
 
-        } else { 
+        } else { // in p2p, we are ready to receve data
           //recv_data_from_conn_sock(i);
 
         }
@@ -96,12 +96,36 @@ void handle_shell_cmds(){
     stringstream cmd_ss(cmd);
     while (getline(cmd_ss, token, ' ')) cmds.push_back(token); 
 
-    if (cmds.at(0).compare(AUTHOR) == 0) cmd_author();
-    if (cmds.at(0).compare(IP) == 0) cmd_ip(my_ip);
-    if (cmds.at(0).compare(PORT) == 0) cmd_port(serv_port);
-    if (cmds.at(0).compare(LIST) == 0) cmd_list();
+    if (cmds.at(0).compare(AUTHOR) == 0){
+        if(cmds.size() != 1) { cout<< "error: command 'AUTHOR' does not take any arguments\n"; return; }
+        cmd_author();
+    } else if(cmds.at(0).compare(IP) == 0) {
+        if(cmds.size() != 1) { cout<< "error: command 'IP' does not take any arguments\n"; return; }
+        cmd_ip(my_ip);
+    } else if (cmds.at(0).compare(PORT) == 0){
+        if(cmds.size() != 1) { cout<< "error: command 'PORT' does not take any arguments\n"; return; }
+        cmd_port(serv_port);
+    } else if(cmds.at(0).compare(LIST) == 0){
+        if(cmds.size() != 1) { cout<< "error: command 'LIST' does not take any arguments\n"; return; }
+        cmd_list();
+    } else if(cmds.at(0).compare(LOGIN) == 0)){
+        
+        if(cmds.size() != 3) { 
+            cout<< "error: command 'LOGIN' takes 2 arguments\n";
+            cout<< "\texample usage LOGIN <server-ip> <server-port>\n";
+            return; 
+        }
 
-    if(cmds.at(0).compare(LOGIN) == 0) ;
+        connect_to_host( cmds.at(1), atoi(cmds.at(2).c_str()) );
+
+    } else if(cmds.at(0).compare(EXIT) == 0){
+        if(cmds.size() != 1) { cout<< "error: command 'EXIT' does not take any arguments\n"; return; }
+        exit_program = true;
+    } else {
+        send_cmds_to_server();
+    }
+
+
     //I think I can get away with just sending the whole string to the server and letting the server handle it.
     /*if(cmds.at(0).compare(REFRESH) == 0) ;
     if(cmds.at(0).compare(SEND) == 0);
@@ -109,7 +133,6 @@ void handle_shell_cmds(){
     if(cmds.at(0).compare(BLOCK) == 0);
     if(cmds.at(0).compare(UNBLOCK) == 0);
     if(cmds.at(0).compare(LOGOUT) == 0);*/
-    if(cmds.at(0).compare(EXIT) == 0) exit_program = true;
 }
 
 struct addrinfo& Client::populate_addr(string hname_or_ip, int port){
@@ -147,6 +170,17 @@ void cmd_login(){
 
 }
 
+void Client::send_cmds_to_server(){
+    string msg;
+    int cmds_size = cmds.size();
+    for(uint i = 0; i< cmds_size; i++){
+        msg += cmds.at(i);
+        if(i == cmds_size -1) msg+=" "; // we don't want to add a space at the end
+    }
+    int send_ret = send(my_socket, msg.c_str(), sizeof(msg), 0);
+    if(send_ret ==  -1) cout << "failed to send '"<<msg<<"' to remote host, error#"<<errno<<endl;
+}
+
 /*void cmd_refresh(){
 
 }
@@ -168,3 +202,11 @@ void cmd_unblock(){
 void cmd_logout(){
 
 }*/
+
+
+
+                        /* DEBUG */
+
+void Client::debug_dump() {
+
+}
