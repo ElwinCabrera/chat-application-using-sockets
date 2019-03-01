@@ -15,4 +15,8 @@ void cmd_error(string cmd);
 void cmd_author();
 void cmd_ip(string ip);
 void cmd_port(int port);
+
+void event_msg_recvd(string from_ip, string msg);
+void event_msg_relayed(string from_ip, string to_ip, string msg);
+bool is_valid_ip(string ip);
 #endif // SHELL_H

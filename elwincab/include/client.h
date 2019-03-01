@@ -40,14 +40,23 @@ private:
     vector<string> cmds;
     vector<struct peer_info*> peers;
 
-
+    void handle_shell_cmds();
+    int receive_data_from_host();
     struct addrinfo* populate_addr(string hname_or_ip, int port);
-    void connect_to_host(string server_ip, int port);
+    int connect_to_host(string server_ip, int port);
     string get_ip_from_sa(struct sockaddr_in *sa);
-    void send_cmds_to_server();
+    int send_cmds_to_server();
 
     void cmd_list();
+    void cmd_login(string host_ip, int port);
+    void cmd_logout();
+
+    void delete_peers_list();
+    void serv_res_refresh(string data);
+    void serv_res_relay_brod(string data);
+    void serv_res_success(string cmd_end);
     void debug_dump();
+
 
 public:
 
@@ -55,7 +64,6 @@ public:
     ~Client();
     void start_client();
     //bool is_valid_ip(string ip);
-    void handle_shell_cmds();
     bool is_ip_in_peers_list(string ip);
 };
 

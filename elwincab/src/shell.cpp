@@ -43,6 +43,19 @@ void cmd_port(int portnum){
   cmd_end("PORT");
 }
 
+void event_msg_recvd(string from_ip, string msg){
+  cmd_success_start("RECEIVED");
+  cse4589_print_and_log("msg from:%s\n[msg]:%s\n", from_ip, msg);
+  cmd_end("RECEIVED");
+}
+
+void event_msg_relayed(string from_ip, string to_ip, string msg){
+  cmd_success_start("RELAYED");
+  cse4589_print_and_log("msg from:%s, to:%s\n[msg]:%s\n", from_ip, to_ip, msg);
+  cmd_end("RELAYED");
+}
+
 bool is_valid_ip(string ip){
 
+  return false;
 }

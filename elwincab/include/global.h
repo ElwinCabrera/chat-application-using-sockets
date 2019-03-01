@@ -25,6 +25,18 @@
 #define LOGOUT "LOGOUT"
 #define EXIT "EXIT"
 
+#define LOGIN_END "LOGIN_END"
+#define BROADCAST_END "BROADCAST_END"
+#define SEND_END "SEND_END"
+#define BLOCK_END "BLOCK_END"
+#define UNBLOCK_END "UNBLOCK_END"
+#define REFRESH_END "REFRESH_END"
+
+#define REFRESH_START "REFRESH_START"
+
+#define RELAYED "RELAYED"
+
+
 
 /**
 Below is the definition of addrinfo:

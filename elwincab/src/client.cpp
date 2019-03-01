@@ -78,6 +78,7 @@ void Client::start_client(){
 
         } else if(i == my_socket){ // ready to receve data from CONNECTED remote host or if doing p2p then peer is requesting to be connected to us
           //handle_new_conn_request();
+          receive_data_from_host();
 
         } else { // in p2p, we are ready to receve data
           //recv_data_from_conn_sock(i);
@@ -116,23 +117,50 @@ void Client::handle_shell_cmds(){
             return; 
         }
 
-        connect_to_host( cmds.at(1), atoi(cmds.at(2).c_str()) );
+        cmd_login( cmds.at(1), atoi(cmds.at(2).c_str()) );
 
     } else if(cmds.at(0).compare(EXIT) == 0){
         if(cmds.size() != 1) { cout<< "error: command 'EXIT' does not take any arguments\n"; return; }
         exit_program = true;
-    } else {
-        send_cmds_to_server();
+    } else if(cmds.at(0).compare(LOGOUT) == 0){
+      cmd_logout();
+    } else if(cmds.at(0).compare(REFRESH) == 0 || 
+              cmds.at(0).compare(SEND) == 0 ||
+              cmds.at(0).compare(BROADCAST) == 0 || 
+              cmds.at(0).compare(BLOCK) == 0 || 
+              cmds.at(0).compare(UNBLOCK) == 0){
+    
+                send_cmds_to_server();
+    
+    }else{
+      cout << "Unknown command '" ;
+      for(int i=0; i<cmds.size(); i++){ cout << cmds.at(i)<<" ";}
+      cout<<"'"<<endl;
+
     }
+    cout<< "> ";
+}
 
+int Client::receive_data_from_host(){
+  string token;
+  char data[BUFFER_MAX];
+  //int recv(int sockfd, void *buf, int len, int flags);
+  int recv_ret = recv(my_socket, data, sizeof(data),0);
+  if(recv_ret < 0 ) cout << "Failed to receive data, error#"<<errno<<endl;
 
-    //I think I can get away with just sending the whole string to the server and letting the server handle it.
-    /*if(cmds.at(0).compare(REFRESH) == 0) ;
-    if(cmds.at(0).compare(SEND) == 0);
-    if(cmds.at(0).compare(BROADCAST) == 0);
-    if(cmds.at(0).compare(BLOCK) == 0);
-    if(cmds.at(0).compare(UNBLOCK) == 0);
-    if(cmds.at(0).compare(LOGOUT) == 0);*/
+  stringstream data_ss(data);
+  getline(data_ss, token, ':');
+  if(token.compare(REFRESH) ==0  || token.compare(REFRESH_START) == 0) serv_res_refresh(data);
+  if(token.compare(RELAYED) ==0 ) serv_res_relay_brod(data);
+
+  if(token.compare(REFRESH_END) ==0) serv_res_success(token);
+  if(token.compare(SEND_END) ==0) serv_res_success(token);
+  if(token.compare(BROADCAST_END) ==0) serv_res_success(token); 
+  if(token.compare(BLOCK_END) ==0) serv_res_success(token);
+  if(token.compare(UNBLOCK_END) ==0) serv_res_success(token); 
+
+  return recv_ret;
+
 }
 
 struct addrinfo* Client::populate_addr(string hname_or_ip, int port){
@@ -148,13 +176,14 @@ struct addrinfo* Client::populate_addr(string hname_or_ip, int port){
 
 }
 
-void Client::connect_to_host(string server_ip, int port){
+int Client::connect_to_host(string server_ip, int port){
     my_socket = socket(my_saddr->sin_family, SOCK_STREAM, 0);
     if(my_socket == -1) cout << "failed to create socket, error#"<<errno<<endl;
 
     server_saddr = (struct sockaddr_in*) populate_addr(server_ip, port);
     int connect_ret = connect(my_socket, (struct sockaddr*) server_saddr, sizeof(server_saddr));
     if(connect_ret ==  -1) cout << "failed to connect to remote host, error#"<<errno<<endl;
+    return connect_ret;
 }
 
 
@@ -166,46 +195,92 @@ string Client::get_ip_from_sa(struct sockaddr_in *sa){
 }
 
 
-void cmd_login(){
-
-}
-
-void Client::send_cmds_to_server(){
+int Client::send_cmds_to_server(){
     string msg;
     int cmds_size = cmds.size();
     for(uint i = 0; i< cmds_size; i++){
         msg += cmds.at(i);
-        if(i == cmds_size -1) msg+=" "; // we don't want to add a space at the end
+        if(i != cmds_size -1) msg+=" "; // we don't want to add a space at the end
     }
     int send_ret = send(my_socket, msg.c_str(), sizeof(msg), 0);
     if(send_ret ==  -1) cout << "failed to send '"<<msg<<"' to remote host, error#"<<errno<<endl;
+    return send_ret;
 }
 
 void Client::cmd_list(){
+  for(int i =0; i<peers.size(); i++){
+    struct peer_info* pi = peers.at(i);
+    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i, pi->hostname, pi->ip, pi->port);
+  }
 
 }
-
-/*void cmd_refresh(){
-
+void Client::cmd_login(string host_ip, int port){
+  int ret = connect_to_host(host_ip, port);
+  if(ret != 0) {cmd_error("LOGIN"); return;}
+  cmd_success_start("LOGIN");
+  cmd_end("LOGIN"); 
 }
 
-void cmd_send(){
+
+void Client::cmd_logout(){
+  int ret = close(my_socket);
+  if(ret !=0) {cmd_error("LOGOUT"); return;}
+  cmd_success_start("LOGOUT");
+  cmd_end("LOGOUT");
 }
 
-void cmd_broadcast(){
-
+void Client::delete_peers_list(){
+  for(uint i =0; i< peers.size(); i++){
+    struct peer_info *pi = peers.at(i);
+    if(pi) free(pi);
+  }
+  peers.erase(peers.begin(), peers.end());
 }
 
-void cmd_block(){
+void Client::serv_res_refresh(string data){
+  struct peer_info *pi;
+  string token, hostname, ip, port;
+  stringstream data_ss(data);
+  getline(data_ss, token, ':');
+  
+  if (token.compare(REFRESH_START) == 0){ 
+    delete_peers_list();
+  }else {
+    getline(data_ss, token, ',');
+    hostname = token;
+    getline(data_ss, token, ',');
+    ip = token;
+    getline(data_ss, token);
+    port = atoi(token.c_str());
+
+    if(!peers.empty()) {cout << "When trying to reconstruct peers list found that peers list is not empty\n"; return; }
+    pi = (struct peer_info*) malloc( sizeof(struct peer_info));
+    peers.push_back(pi);
+  }
+}
+
+void Client::serv_res_relay_brod(string data){
+  string token, from_ip, msg;
+  stringstream data_ss(data);
+  getline(data_ss, token, ':');
+
+  getline(data_ss, token, ',');
+  from_ip = token;
+  getline(data_ss, token);
+  msg = token;
+  event_msg_recvd(from_ip, msg);
+  
+}
+
+void Client::serv_res_success(string cmd_fin){
+  string token;
+  stringstream data_ss(cmd_fin);
+  getline(data_ss, token, '_');
+
+  cmd_success_start(token);
+  cmd_end(token);
 
 }
-void cmd_unblock(){
-
-}
-
-void cmd_logout(){
-
-}*/
 
 
 
