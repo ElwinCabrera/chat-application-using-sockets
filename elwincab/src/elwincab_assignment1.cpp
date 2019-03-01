@@ -54,14 +54,14 @@ int main(int argc, char **argv){
 	
 	if(mode.compare(tmp) == 0){
 		server = new Server(port);
-		server.start_server();
+		server->start_server();
 	}else {
-		client = new Clinet(port);
-		client.start_client();
+		client = new Client(port);
+		client->start_client();
 	}
 
 	if(server) free(server);
-	if(clinet) free(clinet);
+	if(client) free(client);
 
 	return 0;
 }

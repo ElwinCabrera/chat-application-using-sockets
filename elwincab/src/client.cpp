@@ -35,9 +35,9 @@ using std::pair;
 Client::Client(string serv_port){
     char hname[HOSTNAME_LEN];
     gethostname(hname, sizeof(hname));
-    my_hostname = String(hname);
+    my_hostname = hname;
     server_port = atoi(serv_port.c_str());
-    my_saddr = populate_addr(my_hostname, serv_port);
+    my_saddr = (struct sockaddr_in*) populate_addr(my_hostname, server_port);
     my_ip = get_ip_from_sa(my_saddr);
 
     FD_ZERO(&master_fds);
@@ -57,9 +57,9 @@ Client::~Client(){
 
 }
 
-void Clinet::start_clinent(){
+void Client::start_client(){
 
-    debug_dump();
+    //debug_dump();
 
   cout<<"> ";
 
@@ -89,7 +89,7 @@ void Clinet::start_clinent(){
 
 }
 
-void handle_shell_cmds(){
+void Client::handle_shell_cmds(){
     cmds.erase(cmds.begin(),cmds.end());
     string cmd, token;
     cin >> cmd;
@@ -104,11 +104,11 @@ void handle_shell_cmds(){
         cmd_ip(my_ip);
     } else if (cmds.at(0).compare(PORT) == 0){
         if(cmds.size() != 1) { cout<< "error: command 'PORT' does not take any arguments\n"; return; }
-        cmd_port(serv_port);
+        cmd_port(server_port);
     } else if(cmds.at(0).compare(LIST) == 0){
         if(cmds.size() != 1) { cout<< "error: command 'LIST' does not take any arguments\n"; return; }
-        cmd_list();
-    } else if(cmds.at(0).compare(LOGIN) == 0)){
+        //cmd_list();
+    } else if(cmds.at(0).compare(LOGIN) == 0){
         
         if(cmds.size() != 3) { 
             cout<< "error: command 'LOGIN' takes 2 arguments\n";
@@ -135,24 +135,24 @@ void handle_shell_cmds(){
     if(cmds.at(0).compare(LOGOUT) == 0);*/
 }
 
-struct addrinfo& Client::populate_addr(string hname_or_ip, int port){
+struct addrinfo* Client::populate_addr(string hname_or_ip, int port){
   struct addrinfo *ai;
   struct addrinfo hints;
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
 
-  error_num = getaddrinfo(hname_or_ip.c_str(), to_string(port).c_str(), &hints, &ai);
+  int error_num = getaddrinfo(hname_or_ip.c_str(), to_string(port).c_str(), &hints, &ai);
   if (error_num !=0) cout<< "getaddrinfo: "<< gai_strerror(error_num) <<endl;
   return ai;
 
 }
 
-void Clinet::connect_to_host(string server_ip, int port){
+void Client::connect_to_host(string server_ip, int port){
     my_socket = socket(my_saddr->sin_family, SOCK_STREAM, 0);
     if(my_socket == -1) cout << "failed to create socket, error#"<<errno<<endl;
 
-    server_saddr = populate_addr(server_ip, port);
+    server_saddr = (struct sockaddr_in*) populate_addr(server_ip, port);
     int connect_ret = connect(my_socket, (struct sockaddr*) server_saddr, sizeof(server_saddr));
     if(connect_ret ==  -1) cout << "failed to connect to remote host, error#"<<errno<<endl;
 }
@@ -179,6 +179,10 @@ void Client::send_cmds_to_server(){
     }
     int send_ret = send(my_socket, msg.c_str(), sizeof(msg), 0);
     if(send_ret ==  -1) cout << "failed to send '"<<msg<<"' to remote host, error#"<<errno<<endl;
+}
+
+void Client::cmd_list(){
+
 }
 
 /*void cmd_refresh(){

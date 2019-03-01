@@ -13,19 +13,6 @@ void cmd_fail_start(string cmd);
 void cmd_end(string cmd);
 void cmd_error(string cmd);
 void cmd_author();
-void cmd_ip();
-void cmd_port();
-void cmd_list();
-
-void cmd_statistics();
-void cmd_blocked();
-
-void cmd_login();
-void cmd_refresh();
-void cmd_send();
-void cmd_broadcast();
-void cmd_block();
-void cmd_unblock();
-void cmd_logout();
-void cmd_exit();
+void cmd_ip(string ip);
+void cmd_port(int port);
 #endif // SHELL_H
