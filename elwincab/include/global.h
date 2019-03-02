@@ -36,6 +36,8 @@
 
 #define RELAYED "RELAYED"
 
+#define HOSTNAME "HOSTNAME"
+
 
 
 /**

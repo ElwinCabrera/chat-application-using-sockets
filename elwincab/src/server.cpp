@@ -88,11 +88,17 @@ void Server::start_server(){
     if(select_res <0) cout<< "Select failed\n";
 
     for (int i = 0; i <=max_socket; i++) {
+
       if(FD_ISSET(i, &read_fds)) {  // true = at least one socket is ready to be read
         //find the socket that is ready
         if(i == STDIN){ // 0 = stdin
-          //process stdin commands here
-          handle_shell_cmds();
+          //cout<<"> ";
+    
+          string cmd;
+          getline(cin, cmd);
+
+          handle_shell_cmds(cmd);
+          cout<<"> ";
 
         } else if(i == listen_socket){ // true = a client is trying to connect to us, shall we choose to accept
           handle_new_conn_request();
@@ -101,6 +107,8 @@ void Server::start_server(){
           recv_data_from_conn_sock(i);
 
         }
+
+        
       }
     }
 	}
@@ -151,19 +159,21 @@ int Server::sock_and_bind(){
 Takes input from stdin and parses them using space as a delimeter then puts
 each parsed token in a vector (vector size should not be greater than 3, in most cases)
 */
-void Server::handle_shell_cmds(){
+void Server::handle_shell_cmds(string cmd){
   cmds.erase(cmds.begin(),cmds.end());
-  string cmd, token;
-  cin >> cmd;
+  string  token;
   stringstream cmd_ss(cmd);
-  while (getline(cmd_ss, token, ' ')) {cmds.push_back(token);}
+  while (getline(cmd_ss, token, ' ')) cmds.push_back(token);
+
+  //cout<<cmds.size()<<endl;
+  //for(int i =0; i<cmds.size(); i++) cout<<cmds.at(i)<<endl;
+
   if(cmds.at(0).compare(AUTHOR) == 0) cmd_author();
-  if (cmds.at(0).compare(IP) == 0) cmd_ip(serv_ip);
+  if(cmds.at(0).compare(IP) == 0) cmd_ip(serv_ip);
   if(cmds.at(0).compare(PORT) == 0) cmd_port(portnum);
   if(cmds.at(0).compare(LIST) == 0) cmd_list();
   if(cmds.at(0).compare(STATISTICS) == 0) cmd_statistics();
   if(cmds.at(0).compare(BLOCKED) == 0) cmd_blocked(get_rmhi_from_ip(cmds.at(1)));
-  //cout << "> ";
 }
 
 /*if this function returns a number other than 0 then the new connection could not be established*/
@@ -171,7 +181,6 @@ int Server::handle_new_conn_request(){
   int new_conn_sock;
   struct sockaddr_in cli_addr;
   struct remotehos_info rmh_i;
-  it = stored_msgs.begin();
 
   socklen_t addrlen = sizeof(cli_addr);
   new_conn_sock = accept(listen_socket, (struct sockaddr*) &cli_addr, &addrlen);
@@ -182,18 +191,8 @@ int Server::handle_new_conn_request(){
   }
   cout<< "Remote client connected\n";
   string ip = get_ip_from_sa(&cli_addr);
-  it = stored_msgs.find(ip);
-
-
-  if(it  != stored_msgs.end()){
-    cout<< "You got some new messages while you were away"<<endl;
-    vector<pair<string, string>> from_msg = it->second;
-    for(auto itr = from_msg.begin(); itr != from_msg.end(); itr++){
-      cout<<"from: "<<itr->first<<endl;
-      cout<<"\t"<<itr->second<<endl;
-    }
-    stored_msgs.erase(it);
-  }
+  
+  check_and_send_stored_msgs(ip);
 
   if(new_conn_sock > max_socket) max_socket = new_conn_sock;
   FD_SET(new_conn_sock, &master_fds);
@@ -204,20 +203,36 @@ int Server::handle_new_conn_request(){
     rmh_i.loggedin = true;
     rmh_i.sa = &cli_addr;
     rmh_i.sock = new_conn_sock;
+    rmh_i.hostname = "NULL";
     conn_his.push_back(&rmh_i);
     cout<< "New client IP:"<<ip<<endl;
+  } else {
+    cout<<"Client "<<ip<<" logged back in\n";
+    (&rmh_i)->loggedin = true;
   }
-  cout<<"Client "<<ip<<" logged back in\n";
+  send_current_client_list(&rmh_i);
   return new_conn_sock;
 }
 
-/*bool Server::has_msgs(struct sockaddr_in *sa){
-  string ip = get_ip_from_sa(sa);
-  it = stored_msgs.find(ip);
-  if(it == stored_msgs.end()) return false;  //no message
-  return true;
-}*/
+void Server::check_and_send_stored_msgs(string ip){
+  it = stored_msgs.begin();
 
+  it = stored_msgs.find(ip);
+
+  if(it  != stored_msgs.end()){
+    cout<< "You got some new messages while you were away"<<endl;
+    vector<pair<string, string>> from_msg = it->second;
+    for(auto itr = from_msg.begin(); itr != from_msg.end(); itr++){
+      //send_msg(itr->first, itr->second);
+      struct remotehos_info *rmh_i = get_rmhi_from_ip(itr->first);
+      if(rmh_i) relay_msg_to(rmh_i, ip,  itr->second);
+      cout<<"sending msg to '"<<ip <<" from: "<<itr->first<<endl;
+      cout<<"\tmsg: "<<itr->second<<endl;
+    }
+    stored_msgs.erase(it);
+  }
+
+}
 
 /*if this function returns -1 then socket is not in the list of conn_socks (defined as vector)*/
 int Server::recv_data_from_conn_sock(int idx_socket){
@@ -227,22 +242,26 @@ int Server::recv_data_from_conn_sock(int idx_socket){
   //receve data form connected socket here
   int bytes_recvd = recv(idx_socket, recvd_data, BUFFER_MAX, 0);
   string data(recvd_data);
-  struct remotehos_info *rmh_i = get_rmhi_from_sock(idx_socket); // nullptr if not in conn_his
+  struct remotehos_info *rmh_i = get_rmhi_from_sock(idx_socket); // nullptr if not in conn_his 
 
   //check if data is zero
-  if(bytes_recvd != 0){
+  if(bytes_recvd != 0 && rmh_i){
     cout<<data<<endl; // debug
     stringstream data_ss(data);
-    cmds.erase(cmds.begin(),cmds.end());
+    client_cmds.erase(client_cmds.begin(),client_cmds.end());
     string cmd, token;
-    while (getline(data_ss, token, ' ')) {cmds.push_back(token);}
+    while (getline(data_ss, token, ' ')) {client_cmds.push_back(token);}
+    
+    
 
-    if(cmds.at(0).compare(BROADCAST)) relay_msg_to_all(rmh_i,cmds.at(1));
-    if(cmds.at(0).compare(LOGOUT)) logout(rmh_i);
-    if(cmds.at(0).compare(REFRESH)) send_list_loggedin_hosts(rmh_i);  //need implement 
-    if(cmds.at(0).compare(BLOCK)) block(rmh_i, cmds.at(1));
-    if(cmds.at(0).compare(UNBLOCK)) unblock(rmh_i, cmds.at(1));
-    if(cmds.at(0).compare(SEND)) relay_msg_to(rmh_i, cmds.at(1), cmds.at(2));
+    if(client_cmds.at(0).compare(BROADCAST) == 0) relay_msg_to_all(rmh_i,client_cmds.at(1));  // foramt the string to look like RELAYED:from_ip,msg
+    if(client_cmds.at(0).compare(LOGOUT) == 0) logout(rmh_i); 
+    if(client_cmds.at(0).compare(REFRESH) == 0) send_current_client_list(rmh_i);  //need implement 
+    if(client_cmds.at(0).compare(BLOCK) == 0 ) block(rmh_i, client_cmds.at(1));
+    if(client_cmds.at(0).compare(UNBLOCK) == 0) unblock(rmh_i, client_cmds.at(1));
+    if(client_cmds.at(0).compare(SEND) == 0) relay_msg_to(rmh_i, client_cmds.at(1), client_cmds.at(2)); 
+
+    if(client_cmds.at(0).compare(HOSTNAME) == 0) rmh_i->hostname = client_cmds.at(1);
   } else {
 
   }
@@ -257,6 +276,9 @@ int Server::recv_data_from_conn_sock(int idx_socket){
 void Server::block(struct remotehos_info *rmh_i, string ip){
   struct remotehos_info *remote_host = get_rmhi_from_ip(ip);
   rmh_i->blocked_hosts.push_back(remote_host->sa);
+  //int unblock_end_ret = send(rmh_i->sock, UNBLOCK_END,sizeof(UNBLOCK_END),0);
+  //if(unblock_end_ret == -1) cout << "error sending end UNBLOCK msg to '"<< get_ip_from_sa(rmh_i->sa)<<"' error#"<<errno<< endl;
+  send_end_cmd(rmh_i->sock, BLOCK_END, get_ip_from_sa(rmh_i->sa));
 }
 
 void Server::unblock(struct remotehos_info *rmh_i, string ip){
@@ -265,7 +287,13 @@ void Server::unblock(struct remotehos_info *rmh_i, string ip){
   for (uint i = 0; i < blocked_size; i++) {
     saddr = rmh_i->blocked_hosts.at(i);
     string sa_ip = get_ip_from_sa(saddr);
-    if(sa_ip.compare(ip) == 0) {rmh_i->blocked_hosts.erase(rmh_i->blocked_hosts.begin()+ i); return;}
+    if(sa_ip.compare(ip) == 0) {
+      rmh_i->blocked_hosts.erase(rmh_i->blocked_hosts.begin()+ i); 
+      //int unblock_end_ret = send(rmh_i->sock, UNBLOCK_END,sizeof(UNBLOCK_END),0);
+      //if(unblock_end_ret == -1) cout << "error sending end UNBLOCK msg to '"<< get_ip_from_sa(rmh_i->sa)<<"' error#"<<errno<< endl;
+      send_end_cmd(rmh_i->sock, UNBLOCK_END, get_ip_from_sa(rmh_i->sa));
+      return;
+    }
   }
 }
 
@@ -289,8 +317,20 @@ void Server::relay_msg_to(struct remotehos_info *rmh_i, string dst_ip, string ms
   int bytes_sent = 0;
   //check if the destined client is logged in if not then buffer the messege
   if(dst_rmh_i->loggedin) {
-    bytes_sent = send(dst_rmh_i->sock, msg.c_str(),sizeof(msg),0);
+    
+    string formatted_msg = "RELAYED:"+src_ip+","+msg;
+    bytes_sent = send(dst_rmh_i->sock, formatted_msg.c_str(),sizeof(formatted_msg),0);
+    if(bytes_sent == -1) {cout << "error sending to '"<<dst_ip <<"' error#"<<errno<< endl; return;}
+    
+    int send_end_ret = 0;
+    if(client_cmds.at(0).compare(BROADCAST)) send_end_cmd(dst_rmh_i->sock, BROADCAST_END, dst_ip);
+    if(client_cmds.at(0).compare(SEND)) send_end_cmd(dst_rmh_i->sock, SEND_END, dst_ip);
+
+    dst_rmh_i->msg_bytes_rx += sizeof(msg);
+    event_msg_relayed(src_ip, dst_ip, msg);
+
   } else {
+    
     pair<string, string> from_and_msg;
     from_and_msg.first = src_ip;
     from_and_msg.second = msg;
@@ -305,8 +345,6 @@ void Server::relay_msg_to(struct remotehos_info *rmh_i, string dst_ip, string ms
       it->second.push_back(from_and_msg);
     }
   }
-
-  if(bytes_sent == -1) {cout << "error sending to '"<<dst_ip <<"' error#"<<errno<< endl; return;}
   rmh_i->msg_bytes_tx += bytes_sent;
 }
 
@@ -315,10 +353,41 @@ void Server::logout(struct remotehos_info *rmh_i){
   int success = close(rmh_i->sock);
   if(success != 0) cout<<"failed to close socket#"<<socket<<" in logout operation, error#"<< errno<<endl;
   rmh_i->loggedin = false;
+
+  FD_CLR(rmh_i->sock, &master_fds);
+  max_socket =0 ;
+  for(auto &itr : conn_his){ if(itr->sock > max_socket) max_socket = itr->sock;  }
 }
 
-void Server::send_list_loggedin_hosts(struct remotehos_info *rmh_i){
+void Server::send_current_client_list(struct remotehos_info *rmh_i){
+  string rh_hostname, rh_ip, rh_port;
+  sort(conn_his.begin(), conn_his.end(), sort_rmh_by_port);
+  int send_ret =0;
 
+  send_ret = send(rmh_i->sock, REFRESH_START,sizeof(REFRESH_START),0);
+  if(send_ret == -1) cout << "error sending start 'REFRESH_START' msg to '"<< get_ip_from_sa(rmh_i->sa)<<"' error#"<<errno<< endl;
+
+  for(int i=0; i< conn_his.size(); i++){
+    struct remotehos_info *rmhi = conn_his.at(i);
+    if(!rmhi->loggedin) continue;
+    rh_hostname = rmhi->hostname;
+    rh_ip = get_ip_from_sa(rmhi->sa);
+    rh_port = to_string(ntohs(rmhi->sa->sin_port));
+    string send_data = "REFRESH:"+rh_hostname+","+rh_ip+","+rh_port;
+
+    send_ret = send(rmh_i->sock, send_data.c_str(),sizeof(send_data),0);
+    if(send_ret == -1) cout << "error sending entry#"<<i<<" of 'REFRESH' msg to '"<< get_ip_from_sa(rmh_i->sa)<<"' error#"<<errno<< endl;
+  }
+  send_end_cmd(rmh_i->sock, REFRESH_END, get_ip_from_sa(rmh_i->sa));
+
+
+}
+
+
+int Server::send_end_cmd(int socket, string end_cmd_sig, string to_ip){
+  int end_sig_ret = send(socket, end_cmd_sig.c_str(),sizeof(end_cmd_sig),0);
+  if(end_sig_ret == -1) cout << "error sending end '" << end_cmd_sig<<"' msg to '"<< to_ip<<"' error#"<<errno<< endl;
+  return end_sig_ret;
 }
 
 int Server::close_remote_conn(int socket){
@@ -483,10 +552,14 @@ void Server::cmd_statistics(){
 
 void Server::cmd_blocked(struct remotehos_info *rmh_i){
   //The output should display the hostname, IP address, and the listening port numbers of the bloked clents
-
+  cout<<"IN FUNCTION 'cmd_blocked' "<<endl;
   cmd_success_start("BLOCKED");
+  if(!rmh_i) { cout<<"invalid host\n"; return; }
   vector<struct sockaddr_in*> blocked_hosts = rmh_i->blocked_hosts;
   sort(blocked_hosts.begin(), blocked_hosts.end(), sort_sa_by_port);
+  cout<<"ABOUT TO CALL 'blocked_hosts.size()' "<<endl;
+  cout<<blocked_hosts.size()<<endl;
+  cout<<"CALLED 'blocked_hosts.size()' "<<endl;
   
   string ip;
   char hostname[HOSTNAME_LEN];
@@ -518,7 +591,7 @@ void Server::debug_dump(){
   cout<<"port: " <<portnum<<endl;
   cout<<"listen_socket: " <<listen_socket<<endl;
   cout<<"max_socket: " <<max_socket<<endl;
-  cout<<"printing a list of connected sockets\n";
+  //cout<<"printing a list of connected sockets\n";
   //if(conn_socks.size() ==0) cout<<"No connected hosts\n";
   //for (int i =0; i<conn_socks.size(); i++) cout << "socket: " <<conn_socks.at(i)<<endl;
 

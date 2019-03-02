@@ -23,6 +23,7 @@ struct remotehos_info{
   int msg_bytes_tx;
   int sock;
   bool loggedin;
+  string hostname;
   vector<struct sockaddr_in*> blocked_hosts;
   struct sockaddr_in *sa;
 };
@@ -48,6 +49,7 @@ private:
   fd_set master_fds;
   fd_set read_fds;
   vector<string> cmds;
+  vector<string> client_cmds;
   vector<struct remotehos_info*> conn_his;
   static bool sort_rmh_by_port(struct remotehos_info *rmh1, struct remotehos_info *rmh2) { return ntohs(rmh1->sa->sin_port) < ntohs(rmh2->sa->sin_port); }
   static bool sort_sa_by_port(struct sockaddr_in *sa1, struct sockaddr_in *sa2) { return ntohs(sa1->sin_port) < ntohs(sa2->sin_port); }
@@ -58,8 +60,9 @@ private:
 
   int populate_addr(string hname_or_ip, int port);
   int sock_and_bind();
-  void handle_shell_cmds();
+  void handle_shell_cmds(string cmd);
   int handle_new_conn_request();
+  void check_and_send_stored_msgs(string ip);
   int recv_data_from_conn_sock(int idx_socket);
   
   /* Operations that we may be asked by a remote host*/
@@ -68,7 +71,8 @@ private:
   void relay_msg_to_all(struct remotehos_info *rmh_i, string msg);
   void relay_msg_to(struct remotehos_info *rmh_i, string dst_ip, string msg);
   void logout(struct remotehos_info *rmh_i);
-  void send_list_loggedin_hosts(struct remotehos_info *rmh_i);
+  void send_current_client_list(struct remotehos_info *rmh_i);
+  int send_end_cmd(int socket, string end_cmd_sig, string to_ip);
   int close_remote_conn(int socket);
 
   /*some helper and getter functions */

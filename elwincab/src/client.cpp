@@ -138,7 +138,7 @@ void Client::handle_shell_cmds(){
       cout<<"'"<<endl;
 
     }
-    cout<< "> ";
+    //cout<< "> ";
 }
 
 int Client::receive_data_from_host(){

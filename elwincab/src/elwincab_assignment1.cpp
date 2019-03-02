@@ -49,19 +49,23 @@ int main(int argc, char **argv){
 	string port = argv[2];
 	string tmp = "s";
 
-	Server *server;
-	Client *client;
+	//Server *server;
+	//Client *client;
 	
 	if(mode.compare(tmp) == 0){
-		server = new Server(port);
-		server->start_server();
+		//server = new Server(port);
+		//server->start_server();
+		Server server(port);
+		server.start_server();
 	}else {
-		client = new Client(port);
-		client->start_client();
+		//client = new Client(port);
+		//client->start_client();
+		Client client(port);
+		client.start_client();
 	}
 
-	if(server) free(server);
-	if(client) free(client);
+	//if(server) free(server);
+	//if(client) free(client);
 
 	return 0;
 }
