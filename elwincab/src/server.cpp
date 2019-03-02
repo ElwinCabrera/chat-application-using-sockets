@@ -454,7 +454,7 @@ bool Server::dest_ip_blocking_src_ip(string src_ip, string dest_ip){
 
 string Server::get_ip_from_sa(struct sockaddr_in *sa){
   char ip[INET_ADDRSTRLEN];
-  inet_ntop(sa->sin_family, (struct sockaddr*) sa, ip, sizeof(ip));
+  inet_ntop(sa->sin_family, &(sa->sin_addr), ip, INET_ADDRSTRLEN);
   string ret(ip);
   return ret;
 }

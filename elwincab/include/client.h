@@ -42,7 +42,7 @@ private:
 
     void handle_shell_cmds(string stdin_string);
     int receive_data_from_host();
-    struct addrinfo* populate_addr(string hname_or_ip, int port);
+    struct sockaddr_in* populate_addr(string hname_or_ip, int port);
     int connect_to_host(string server_ip, int port);
     string get_ip_from_sa(struct sockaddr_in *sa);
     struct peer_info* get_pi_from_ip(string ip);

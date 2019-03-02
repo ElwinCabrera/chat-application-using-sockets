@@ -33,11 +33,15 @@ using std::pair;
 //int recv(int sockfd, void *buf, int len, int flags);
 //int send(int sockfd, const void *msg, int len, int flags); 
 Client::Client(string serv_port){
+
+    my_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if(my_socket == -1) cout << "failed to create socket, error#"<<errno<<endl;
+
     char hname[HOSTNAME_LEN];
     gethostname(hname, sizeof(hname));
     my_hostname = hname;
     server_port = atoi(serv_port.c_str());
-    my_saddr = (struct sockaddr_in*) populate_addr(my_hostname, server_port);
+    my_saddr =  populate_addr(my_hostname, server_port);
     my_ip = get_ip_from_sa(my_saddr);
 
     FD_ZERO(&master_fds);
@@ -81,7 +85,7 @@ void Client::start_client(){
 
         } else if(i == my_socket){ // ready to receve data from CONNECTED remote host or if doing p2p then peer is requesting to be connected to us
           //handle_new_conn_request();
-          receive_data_from_host();
+          //receive_data_from_host();
 
         } else { // in p2p, we are ready to receve data
           //recv_data_from_conn_sock(i);
@@ -174,7 +178,7 @@ int Client::receive_data_from_host(){
 
 }
 
-struct addrinfo* Client::populate_addr(string hname_or_ip, int port){
+struct sockaddr_in* Client::populate_addr(string hname_or_ip, int port){
   struct addrinfo *ai;
   struct addrinfo hints;
   memset(&hints, 0, sizeof(hints));
@@ -183,15 +187,13 @@ struct addrinfo* Client::populate_addr(string hname_or_ip, int port){
 
   int error_num = getaddrinfo(hname_or_ip.c_str(), to_string(port).c_str(), &hints, &ai);
   if (error_num !=0) cout<< "getaddrinfo: "<< gai_strerror(error_num) <<endl;
-  return ai;
+  return (struct sockaddr_in*) ai->ai_addr;
 
 }
 
 int Client::connect_to_host(string server_ip, int port){
-    my_socket = socket(my_saddr->sin_family, SOCK_STREAM, 0);
-    if(my_socket == -1) cout << "failed to create socket, error#"<<errno<<endl;
-
-    server_saddr = (struct sockaddr_in*) populate_addr(server_ip, port);
+    
+    server_saddr = populate_addr(server_ip, port);
     int connect_ret = connect(my_socket, (struct sockaddr*) server_saddr, sizeof(server_saddr));
     if(connect_ret ==  -1) cout << "failed to connect to remote host, error#"<<errno<<endl;
     if(connect_ret ==  0 && server_saddr) cout<< "connected to '"<<get_ip_from_sa(server_saddr)<<"' succesfully\n";
@@ -201,7 +203,7 @@ int Client::connect_to_host(string server_ip, int port){
 
 string Client::get_ip_from_sa(struct sockaddr_in *sa){
   char ip[INET_ADDRSTRLEN];
-  inet_ntop(sa->sin_family, (struct sockaddr*) sa, ip, sizeof(ip));
+  inet_ntop(sa->sin_family, &(sa->sin_addr), ip, INET_ADDRSTRLEN);
   string ret(ip);
   return ret;
 }
@@ -320,7 +322,7 @@ void Client::debug_dump() {
   cout<<"hostname: " <<my_hostname<<endl;
   cout<<"ip: " <<my_ip<<endl;
   cout<<"port: " <<server_port<<endl;
-  cout<<"listen_socket: " <<my_socket<<endl;
+  cout<<"my_socket: " <<my_socket<<endl;
   cout<<"max_socket: " <<max_socket<<endl;
   //if(conn_socks.size() ==0) cout<<"No connected hosts\n";
   //for (int i =0; i<conn_socks.size(); i++) cout << "socket: " <<conn_socks.at(i)<<endl;
