@@ -189,10 +189,11 @@ int Server::handle_new_conn_request(){
     cout<< "Could not connect host, accept failed, error#"<<errno<<endl;
     return new_conn_sock;
   }
-  cout<< "Remote client connected\n";
   string ip = get_ip_from_sa(&cli_addr);
+  cout<< "Remote client '" <<ip<<"' successfuly connected\n";
   
   check_and_send_stored_msgs(ip);
+  
 
   if(new_conn_sock > max_socket) max_socket = new_conn_sock;
   FD_SET(new_conn_sock, &master_fds);
@@ -243,6 +244,7 @@ int Server::recv_data_from_conn_sock(int idx_socket){
   int bytes_recvd = recv(idx_socket, recvd_data, BUFFER_MAX, 0);
   string data(recvd_data);
   struct remotehos_info *rmh_i = get_rmhi_from_sock(idx_socket); // nullptr if not in conn_his 
+  if(rmh_i) cout<< "got '"<<recvd_data<<"' from client '"<<get_ip_from_sa(rmh_i->sa)<<"' \n";     //DEBUG
 
   //check if data is zero
   if(bytes_recvd != 0 && rmh_i){

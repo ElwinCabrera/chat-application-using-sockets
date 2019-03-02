@@ -40,16 +40,18 @@ private:
     vector<string> cmds;
     vector<struct peer_info*> peers;
 
-    void handle_shell_cmds();
+    void handle_shell_cmds(string stdin_string);
     int receive_data_from_host();
     struct addrinfo* populate_addr(string hname_or_ip, int port);
     int connect_to_host(string server_ip, int port);
     string get_ip_from_sa(struct sockaddr_in *sa);
+    struct peer_info* get_pi_from_ip(string ip);
     int send_cmds_to_server();
 
     void cmd_list();
     void cmd_login(string host_ip, int port);
     void cmd_logout();
+    void cmd_exit();
 
     void delete_peers_list();
     void serv_res_refresh(string data);
