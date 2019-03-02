@@ -85,7 +85,7 @@ void Client::start_client(){
 
         } else if(i == my_socket){ // ready to receve data from CONNECTED remote host or if doing p2p then peer is requesting to be connected to us
           //handle_new_conn_request();
-          //receive_data_from_host();
+          receive_data_from_host();
 
         } else { // in p2p, we are ready to receve data
           //recv_data_from_conn_sock(i);
@@ -154,9 +154,9 @@ int Client::receive_data_from_host(){
   char data[BUFFER_MAX];
   //int recv(int sockfd, void *buf, int len, int flags);
   int recv_ret = recv(my_socket, data, sizeof(data),0);
-  if(recv_ret < 0 ) cout << "Failed to receive data, error#"<<errno<<endl;
+  //if(recv_ret < 0 ) cout << "Failed to receive data, error#"<<errno<<endl;
 
-  cout<<"Got '"<<data<<"' from server"<<endl;  // DEBUG
+  //cout<<"Got '"<<data<<"' from server"<<endl;  // DEBUG
 
   stringstream data_ss(data);
   getline(data_ss, token, ':');
