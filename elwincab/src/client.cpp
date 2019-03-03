@@ -194,7 +194,7 @@ struct sockaddr_in* Client::populate_addr(string hname_or_ip, int port){
 int Client::connect_to_host(string server_ip, int port){
     
     server_saddr = populate_addr(server_ip, port);
-    int connect_ret = connect(my_socket, (struct sockaddr*) server_saddr, sizeof(server_saddr));
+    int connect_ret = connect(my_socket, (struct sockaddr*) server_saddr, sizeof(*server_saddr));
     if(connect_ret ==  -1) cout << "failed to connect to remote host, error#"<<errno<<endl;
     if(connect_ret ==  0 && server_saddr) cout<< "connected to '"<<get_ip_from_sa(server_saddr)<<"' succesfully\n";
     return connect_ret;
@@ -240,6 +240,7 @@ void Client::cmd_list(){
 void Client::cmd_login(string host_ip, int port){
   int ret = connect_to_host(host_ip, port);
   if(ret != 0) {cmd_error(LOGIN); return;}
+  loggedin = true;
   cmd_success_start(LOGIN);
   cmd_end(LOGIN); 
 }

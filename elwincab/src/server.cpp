@@ -180,7 +180,7 @@ void Server::handle_shell_cmds(string cmd){
 int Server::handle_new_conn_request(){
   int new_conn_sock;
   struct sockaddr_in cli_addr;
-  struct remotehos_info rmh_i;
+  struct remotehos_info *rmh_i = (struct remotehos_info*) malloc(sizeof(struct remotehos_info));
 
   socklen_t addrlen = sizeof(cli_addr);
   new_conn_sock = accept(listen_socket, (struct sockaddr*) &cli_addr, &addrlen);
@@ -198,24 +198,25 @@ int Server::handle_new_conn_request(){
   if(new_conn_sock > max_socket) max_socket = new_conn_sock;
   FD_SET(new_conn_sock, &master_fds);
 
-  if(!host_in_history(&rmh_i)){
-    rmh_i.msg_bytes_tx =0;
-    rmh_i.msg_bytes_rx=0;
-    rmh_i.loggedin = true;
-    rmh_i.sa = &cli_addr;
-    rmh_i.sock = new_conn_sock;
-    rmh_i.hostname = "NULL";
-    conn_his.push_back(&rmh_i);
+  if(!host_in_history(ip)){
+    rmh_i->msg_bytes_tx =0;
+    rmh_i->msg_bytes_rx=0;
+    rmh_i->loggedin = true;
+    rmh_i->sa = &cli_addr;
+    rmh_i->sock = new_conn_sock;
+    rmh_i->hostname = "NULL";
+    conn_his.push_back(rmh_i);
     cout<< "New client IP:"<<ip<<endl;
   } else {
     cout<<"Client "<<ip<<" logged back in\n";
-    (&rmh_i)->loggedin = true;
   }
-  send_current_client_list(&rmh_i);
+  send_current_client_list(rmh_i);
   return new_conn_sock;
 }
 
 void Server::check_and_send_stored_msgs(string ip){
+  if(stored_msgs.empty()) return;
+
   it = stored_msgs.begin();
 
   it = stored_msgs.find(ip);
@@ -430,8 +431,7 @@ int Server::close_remote_conn(int socket){
 string Server::get_ip() {return serv_ip;}*/
 
 //if host is in the connection history (conn_his) that means that host is either logged in or logged out but has NOT exited the program
-bool Server::host_in_history(struct remotehos_info *rmh_i){
-  string ip = get_ip_from_sa(rmh_i->sa);
+bool Server::host_in_history(string ip){
   string test_ip;
   for (uint i = 0; i < conn_his.size(); i++) {
     test_ip = get_ip_from_sa(conn_his.at(i)->sa);

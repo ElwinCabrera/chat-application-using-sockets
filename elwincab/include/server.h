@@ -76,7 +76,7 @@ private:
   int close_remote_conn(int socket);
 
   /*some helper and getter functions */
-  bool host_in_history(struct remotehos_info *rmh_i);
+  bool host_in_history(string ip);
   bool dest_ip_blocking_src_ip(string src_ip, string dest_ip);
   
   string get_ip_from_sa(struct sockaddr_in *sa);
