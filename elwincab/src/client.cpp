@@ -35,7 +35,7 @@ using std::pair;
 Client::Client(string serv_port){
 
     my_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if(my_socket == -1) cout << "failed to create socket, error#"<<errno<<endl;
+    if(my_socket == -1) perror("failed to create socket\n");
 
     char hname[HOSTNAME_LEN];
     gethostname(hname, sizeof(hname));
@@ -195,8 +195,8 @@ int Client::connect_to_host(string server_ip, int port){
     
     server_saddr = populate_addr(server_ip, port);
     int connect_ret = connect(my_socket, (struct sockaddr*) server_saddr, sizeof(*server_saddr));
-    if(connect_ret ==  -1) cout << "failed to connect to remote host, error#"<<errno<<endl;
-    if(connect_ret ==  0 && server_saddr) cout<< "connected to '"<<get_ip_from_sa(server_saddr)<<"' succesfully\n";
+    if(connect_ret ==  -1) perror("failed to connect to remote host")
+    if(connect_ret ==  0 && server_saddr) perror("connected to '%s' successfuly\n",get_ip_from_sa(server_saddr).c_str());
     return connect_ret;
 }
 
@@ -224,7 +224,7 @@ int Client::send_cmds_to_server(){
         if(i != cmds_size -1) msg+=" "; // we don't want to add a space at the end
     }
     int send_ret = send(my_socket, msg.c_str(), sizeof(msg), 0);
-    if(send_ret ==  -1) cout << "failed to send '"<<msg<<"' to remote host, error#"<<errno<<endl;
+    if(send_ret ==  -1) perror("failed to send '%s' to remote host\n", msg.c_str());
     return send_ret;
 }
 

@@ -145,10 +145,10 @@ int Server::sock_and_bind(){
   int error_num =0;
 
   listen_socket = socket(AF_INET, SOCK_STREAM, 0);
-  if(listen_socket < 0) cout << "Could not create socket, error#"<<errno<<endl;
+  if(listen_socket < 0) cout << "Could not create socket,");
 
   int bind_ret = bind(listen_socket, (struct sockaddr*) my_saddr, sizeof(struct sockaddr_in));
-  if(bind_ret == -1) cout << "Could not bind ip and socket to port, error#"<<errno<<endl;
+  if(bind_ret == -1) perror("ERROR: Could not bind ip and socket to port\n");
 
   if(listen_socket == -1 || bind_ret == -1) {/*cout << "Quiting...goodbye\n";*/ error_num = -1;}
   return error_num;
@@ -182,7 +182,7 @@ int Server::handle_new_conn_request(){
   new_conn_sock = accept(listen_socket, (struct sockaddr*) &cli_addr, &addrlen);
 
   if(new_conn_sock == -1) {
-    cout<< "Could not connect host, accept failed, error#"<<errno<<endl;
+    perror("ERROR: Could not connect host, accept failed\n");
     return new_conn_sock;
   }
   string ip = get_sa_ip(&cli_addr);
@@ -201,6 +201,7 @@ int Server::handle_new_conn_request(){
     new_host.sa = &cli_addr;
     new_host.sock = new_conn_sock;
     new_host.hostname = "NULL";
+    new_host.ip = ip;
     conn_his.push_back(new_host);
     cout<< "New client IP:"<<ip<<endl;
   } else {
@@ -313,7 +314,7 @@ void Server::relay_msg_to(string src_ip, string dest_ip, string msg){
     
     string formatted_msg = "RELAYED:"+src_ip+","+msg;
     bytes_sent = send(dest_host.sock, formatted_msg.c_str(),sizeof(formatted_msg),0);
-    if(bytes_sent == -1) {cout << "error sending to '"<<dest_ip <<"' error#"<<errno<< endl; return;}
+    if(bytes_sent == -1) { perror("ERROR: In sending to '%s'\n",dest_ip.c_str()); return;}
     
     int send_end_ret = 0;
     if(client_cmds.at(0).compare(BROADCAST)) send_end_cmd(dest_host.sock, BROADCAST_END, dest_ip);
@@ -348,7 +349,7 @@ void Server::relay_msg_to(string src_ip, string dest_ip, string msg){
 
 void Server::logout(struct remotehos_info host){
   int success = close(host.sock);
-  if(success != 0) cout<<"failed to close socket#"<<socket<<" in logout operation, error#"<< errno<<endl;
+  if(success != 0) perror("ERROR: Failed to close socket#%d in logout operation\n", socket);
   //host->loggedin = false;
   get_host_ptr(host.ip)->loggedin = false;
 
@@ -363,7 +364,7 @@ void Server::send_current_client_list(struct remotehos_info host){
   int send_ret =0;
 
   send_ret = send(host.sock, REFRESH_START,sizeof(REFRESH_START),0);
-  if(send_ret == -1) cout << "error sending start 'REFRESH_START' msg to '"<< host.ip<<"' error#"<<errno<< endl;
+  if(send_ret == -1) perror("ERROR: In sending start 'REFRESH_START' msg to '%s'", host.ip.c_str());
 
   for(int i=0; i< conn_his.size(); i++){
     struct remotehos_info h = conn_his.at(i);
@@ -374,7 +375,7 @@ void Server::send_current_client_list(struct remotehos_info host){
     string send_data = "REFRESH:"+h_hostname+","+h_ip+","+h_port;
 
     send_ret = send(host.sock, send_data.c_str(),sizeof(send_data),0);
-    if(send_ret == -1) cout << "error sending entry#"<<i<<" of 'REFRESH' msg to '"<< host.ip<<"' error#"<<errno<< endl;
+    if(send_ret == -1) perror("ERROR: In sending entry#%d of 'REFRESH' msg to '%s'\n",i,host.ip.c_str());
   }
   send_end_cmd(host.sock, REFRESH_END, host.ip);
 
@@ -384,7 +385,7 @@ void Server::send_current_client_list(struct remotehos_info host){
 
 int Server::send_end_cmd(int socket, string end_cmd_sig, string to_ip){
   int end_sig_ret = send(socket, end_cmd_sig.c_str(),sizeof(end_cmd_sig),0);
-  if(end_sig_ret == -1) cout << "error sending end '" << end_cmd_sig<<"' msg to '"<< to_ip<<"' error#"<<errno<< endl;
+  if(end_sig_ret == -1) cout << "ERROR: In sending end '" << end_cmd_sig<<"' msg to '",to_ip);
   return end_sig_ret;
 }
 
@@ -410,7 +411,7 @@ int Server::close_remote_conn(int socket){
   for(auto &itr : conn_his){ if(itr.sock > max_socket) max_socket = itr.sock;  }
 
   success = close(socket);
-  if(success != 0) cout<<"failed to close socket#"<<socket<<" error#"<< errno<<endl;
+  if(success != 0) perror("ERROR: Failed to close socket#%d\n",socket)
 
   return success;
 }
@@ -529,7 +530,7 @@ void Server::cmd_list(){ //get list of logged in hosts sorted by port number
     ni_ret = getnameinfo((struct sockaddr*) h.sa, sizeof(h.sa), hostname, sizeof(hostname), NULL, 0, NI_NOFQDN | NI_NAMEREQD);
     if(ni_ret){
       cmd_error("LIST");
-      cout<< "could not get hostname for '"<<h.ip<<"' error: "<<gai_strerror(errno)<<endl;
+      perror("ERROR: Could not get hostname for '%s'\n",h.ip.c_str();
       return;
     }
     cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, hostname, h.ip.c_str(), to_string(h.port));
@@ -548,7 +549,7 @@ void Server::cmd_statistics(){
     ni_ret = getnameinfo((struct sockaddr*) h.sa, sizeof(h.sa), hostname, sizeof(hostname), NULL, 0, NI_NOFQDN | NI_NAMEREQD);
     if(ni_ret){
       cmd_error("STATISTICS");
-      cout<< "could not get hostname, in statistics error: "<<gai_strerror(errno)<<endl;
+      perror("ERROR: Could not get hostname, in statistics");
       return;
     }
 
@@ -585,7 +586,7 @@ void Server::cmd_blocked(string ip){
     ni_ret = getnameinfo((struct sockaddr*) h.sa, sizeof(h.sa), hostname, sizeof(hostname), NULL, 0, NI_NOFQDN | NI_NAMEREQD);
     if(ni_ret){
       cmd_error("BLOCKED");
-      cout<< "could not get hostname for '"<<h.ip<<"' error: "<<gai_strerror(errno)<<endl;
+      perror("ERROR: Could not get hostname for '%d'\n",h.ip.c_str());
       return;
     }
     cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, hostname, h.ip.c_str(), to_string(h.port));
