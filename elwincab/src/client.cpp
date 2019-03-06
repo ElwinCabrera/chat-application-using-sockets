@@ -195,8 +195,8 @@ int Client::connect_to_host(string server_ip, int port){
     
     server_saddr = populate_addr(server_ip, port);
     int connect_ret = connect(my_socket, (struct sockaddr*) server_saddr, sizeof(*server_saddr));
-    if(connect_ret ==  -1) perror("failed to connect to remote host")
-    if(connect_ret ==  0 && server_saddr) perror("connected to '%s' successfuly\n",get_ip_from_sa(server_saddr).c_str());
+    if(connect_ret ==  -1) perror("failed to connect to remote host\n");
+    if(connect_ret ==  0 && server_saddr) { perror("connected to '"); cout<<get_ip_from_sa(server_saddr)<<"' succesfuly\n"; }
     return connect_ret;
 }
 
@@ -224,7 +224,7 @@ int Client::send_cmds_to_server(){
         if(i != cmds_size -1) msg+=" "; // we don't want to add a space at the end
     }
     int send_ret = send(my_socket, msg.c_str(), sizeof(msg), 0);
-    if(send_ret ==  -1) perror("failed to send '%s' to remote host\n", msg.c_str());
+    if(send_ret ==  -1) { perror("failed to send message to remote host msg: '"); cout<<msg<<"' \n"; }
     return send_ret;
 }
 
