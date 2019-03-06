@@ -25,7 +25,6 @@ using std::endl;
 using std::string;
 using std::vector;
 using std::sort;
-using std::to_string;
 using std::stringstream;
 using std::map;
 using std::pair;
@@ -129,7 +128,11 @@ struct sockaddr_in* Server::populate_addr(string hname_or_ip, int port){
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
 
-  int gai_ret = getaddrinfo(hname_or_ip.c_str(), to_string(port).c_str(), &hints, &ai);
+  //string prt;
+  stringstream ss;
+  ss << port;
+  //prt = ss.str();
+  int gai_ret = getaddrinfo(hname_or_ip.c_str(), ss.str().c_str(), &hints, &ai);
   if (gai_ret !=0) cout<< "getaddrinfo: "<< gai_strerror(gai_ret) <<endl;
   return (struct sockaddr_in*) ai->ai_addr;
 
@@ -371,7 +374,11 @@ void Server::send_current_client_list(struct remotehos_info host){
     if(!h.loggedin || host.ip.compare(h.ip) ) continue;
     h_hostname = h.hostname;
     h_ip = h.ip;
-    h_port = to_string(h.port);
+    //string prt;
+    stringstream ss;
+    ss << h.port;
+    //prt = ss.str();
+    h_port = ss.str();
     string send_data = "REFRESH:"+h_hostname+","+h_ip+","+h_port;
 
     send_ret = send(host.sock, send_data.c_str(),sizeof(send_data),0);
@@ -533,7 +540,11 @@ void Server::cmd_list(){ //get list of logged in hosts sorted by port number
       perror("ERROR: Could not get hostname for '"); cout<<h.ip<<"'\n";
       return;
     }
-    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, hostname, h.ip.c_str(), to_string(h.port));
+    //string prt;
+    stringstream ss;
+    ss << h.port;
+    //prt = ss.str();
+    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, hostname, h.ip.c_str(), ss.str().c_str());
   }
   cmd_end("LIST");
 }
@@ -589,7 +600,11 @@ void Server::cmd_blocked(string ip){
       perror("ERROR: Could not get hostname for '"); cout<<h.ip<<"'\n";
       return;
     }
-    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, hostname, h.ip.c_str(), to_string(h.port));
+    //string prt;
+    stringstream ss;
+    ss << h.port;
+    //prt = ss.str();
+    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, hostname, h.ip.c_str(), ss.str().c_str());
   }
   cmd_end("BLOCKED");
   

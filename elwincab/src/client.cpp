@@ -25,7 +25,6 @@ using std::endl;
 using std::string;
 using std::vector;
 using std::sort;
-using std::to_string;
 using std::stringstream;
 using std::map;
 using std::pair;
@@ -185,7 +184,12 @@ struct sockaddr_in* Client::populate_addr(string hname_or_ip, int port){
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
 
-  int error_num = getaddrinfo(hname_or_ip.c_str(), to_string(port).c_str(), &hints, &ai);
+  //string prt;
+  stringstream ss;
+  ss << port;
+  //prt = ss.str();
+
+  int error_num = getaddrinfo(hname_or_ip.c_str(), ss.str().c_str(), &hints, &ai);
   if (error_num !=0) cout<< "getaddrinfo: "<< gai_strerror(error_num) <<endl;
   return (struct sockaddr_in*) ai->ai_addr;
 
