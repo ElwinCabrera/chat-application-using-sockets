@@ -92,8 +92,6 @@ private:
 
 
   /*shell commands*/
-  //void cmd_ip();
-  //void cmd_port();
   void cmd_list();
   void cmd_statistics();
   void cmd_blocked(string ip);
