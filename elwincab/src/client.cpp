@@ -206,8 +206,8 @@ int Client::connect_to_host(string server_ip, int port){
     if(connect_ret ==  -1) perror("failed to connect to remote host\n");
     if(connect_ret ==  0 && server_saddr) cout<<"connected to '"<< get_ip_from_sa(server_saddr)<<"' succesfuly\n";
 
-    connect_ret = custom_send(my_socket, "HOSTNAME:"+my_hostname);
-    if(connect_ret == -1) { cout<< "could not send hostname to host"; perror(""); cout<<"\n"; }
+    int send_ret = custom_send(my_socket, "HOSTNAME:"+my_hostname);
+    if(send_ret == -1) { cout<< "could not send hostname to host"; perror(""); cout<<"\n"; }
     return connect_ret;
 }
 
