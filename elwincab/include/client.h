@@ -53,6 +53,9 @@ private:
     void cmd_logout();
     void cmd_exit();
 
+    int custom_send(int socket, string msg);
+    int custom_recv(int socket, string &buffer);
+
     void delete_peers_list();
     void serv_res_refresh(string data);
     void serv_res_relay_brod(string data);

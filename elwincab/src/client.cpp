@@ -150,9 +150,11 @@ void Client::handle_shell_cmds(string stdin_string){
 
 int Client::receive_data_from_host(){
   string token;
-  char data[BUFFER_MAX];
+  //char data[BUFFER_MAX];
+  string data;
   //int recv(int sockfd, void *buf, int len, int flags);
-  int recv_ret = recv(my_socket, data, sizeof(data),0);
+  //int recv_ret = recv(my_socket, data, sizeof(data),0);
+  int recv_ret = custom_recv(my_socket, data);
   //if(recv_ret < 0 ) cout << "Failed to receive data, error#"<<errno<<endl;
 
   //cout<<"Got '"<<data<<"' from server"<<endl;  // DEBUG
@@ -227,7 +229,8 @@ int Client::send_cmds_to_server(){
         msg += cmds.at(i);
         if(i != cmds_size -1) msg+=" "; // we don't want to add a space at the end
     }
-    int send_ret = send(my_socket, msg.c_str(), sizeof(msg), 0);
+    //int send_ret = send(my_socket, msg.c_str(), sizeof(msg), 0);
+    int send_ret = custom_send(my_socket, msg);
     if(send_ret ==  -1) { perror("failed to send message to remote host msg: '"); cout<<msg<<"' \n"; }
     return send_ret;
 }
@@ -316,6 +319,37 @@ void Client::serv_res_success(string cmd_fin){
   cmd_success_start(token);
   cmd_end(token);
 
+}
+
+int Client::custom_send(int socket, string msg){
+  int send_ret; 
+  uint32_t msg_length = htonl(msg.size());
+  
+  send_ret= send(socket, &msg_length, sizeof(uint32_t), 0);
+  if(send_ret == -1) perror("ERROR: Faliled to send the data length");
+
+  send_ret = send(socket, msg.c_str(), msg_length, 0);
+  if(send_ret == -1) perror("ERROR: Faliled to send the data");
+
+  return send_ret;
+
+}
+
+int Client::custom_recv(int socket, string &buffer ){
+  int recv_ret = 0;
+  uint32_t dataLength;
+  vector<char> buff; 
+
+  recv_ret = recv(socket, &dataLength, sizeof(uint32_t), 0);
+  if(recv_ret == -1) perror("Error: Failed to get the data length from host\n");
+
+  buff.resize(dataLength, '\n');
+  recv_ret = recv(socket, &(buff[0]), dataLength, 0);
+  if(recv_ret == -1) perror("Error: Failed to get the data from host\n");
+
+  buffer.append(buff.cbegin(), buff.cend());
+
+  return recv_ret;
 }
 
 

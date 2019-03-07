@@ -79,6 +79,8 @@ void Server::start_server(){
   listen(listen_socket, 5);
 
   while(true){
+    cout<<"> ";
+    fflush(stdout);
     memcpy(&read_fds, &master_fds, sizeof(master_fds));
 
     int select_res = select(max_socket +1, &read_fds, NULL, NULL, NULL);
@@ -240,13 +242,16 @@ void Server::check_and_send_stored_msgs(string dest_ip){
 /*if this function returns -1 then socket is not in the list of conn_socks (defined as vector)*/
 int Server::recv_data_from_conn_sock(int idx_socket){
   int conn_sock = 0;
-  char *recvd_data = (char*) malloc(sizeof(char*) * 500+1);
-  memset(recvd_data, 0, 500+1);
+  //char *recvd_data = (char*) malloc(sizeof(char*) * 500+1);
+  //memset(recvd_data, 0, 500+1);
+  string data;
   //receve data form connected socket here
-  int bytes_recvd = recv(idx_socket, recvd_data, 500-1, 0);
-  string data(recvd_data);
+  //int bytes_recvd = recv(idx_socket, recvd_data, 500-1, 0);
+  int bytes_recvd = custom_recv(idx_socket, data);
+  //string data(recvd_data);
   struct remotehos_info host = get_host(idx_socket); // nullptr if not in conn_his 
-  cout<< "got '"<<recvd_data<<"' from client '"<<host.ip<<"' \n";     //DEBUG
+  cout<< "got '"<<data<<"' from client '"<<host.ip<<"' \n";     //DEBUG
+  fflush(stdout);
 
   //check if data is zero
   if(bytes_recvd != 0 ){
@@ -269,7 +274,7 @@ int Server::recv_data_from_conn_sock(int idx_socket){
   } else {
 
   }
-  free(recvd_data);
+  //free(recvd_data);
   return conn_sock;
 }
 
@@ -316,7 +321,8 @@ void Server::relay_msg_to(string src_ip, string dest_ip, string msg){
   if(dest_host.loggedin) {
     
     string formatted_msg = "RELAYED:"+src_ip+","+msg;
-    bytes_sent = send(dest_host.sock, formatted_msg.c_str(),sizeof(formatted_msg),0);
+    //bytes_sent = send(dest_host.sock, formatted_msg.c_str(),sizeof(formatted_msg),0);
+    bytes_sent = custom_send(dest_host.sock, formatted_msg);
     if(bytes_sent == -1) { perror("ERROR: In sending to '"); cout<< dest_ip<<"'\n"; return;}
     
     int send_end_ret = 0;
@@ -366,7 +372,8 @@ void Server::send_current_client_list(struct remotehos_info host){
   sort(conn_his.begin(), conn_his.end(), sort_hosts_by_port);
   int send_ret =0;
 
-  send_ret = send(host.sock, REFRESH_START,sizeof(REFRESH_START),0);
+  //send_ret = send(host.sock, REFRESH_START,sizeof(REFRESH_START),0);
+  send_ret = custom_send(host.sock, REFRESH_START);
   if(send_ret == -1) { perror("ERROR: In sending start 'REFRESH_START' msg to "); cout<<host.ip<<endl; return; }
 
   for(int i=0; i< conn_his.size(); i++){
@@ -381,7 +388,8 @@ void Server::send_current_client_list(struct remotehos_info host){
     h_port = ss.str();
     string send_data = "REFRESH:"+h_hostname+","+h_ip+","+h_port;
 
-    send_ret = send(host.sock, send_data.c_str(),sizeof(send_data),0);
+    //send_ret = send(host.sock, send_data.c_str(),sizeof(send_data),0);
+    send_ret = custom_send(host.sock, REFRESH_START);
     if(send_ret == -1) { perror("ERROR: In sending 'REFRESH' msg to '"); cout<< host.ip<<"' of entry#"<<i<<endl;  return; }
   }
   send_end_cmd(host.sock, REFRESH_END, host.ip);
@@ -391,7 +399,8 @@ void Server::send_current_client_list(struct remotehos_info host){
 
 
 int Server::send_end_cmd(int socket, string end_cmd_sig, string to_ip){
-  int end_sig_ret = send(socket, end_cmd_sig.c_str(),sizeof(end_cmd_sig),0);
+  //int end_sig_ret = send(socket, end_cmd_sig.c_str(),sizeof(end_cmd_sig),0);
+  int end_sig_ret = custom_send(socket, end_cmd_sig);
   if(end_sig_ret == -1) { perror("ERROR: In sending end signal msg to '"); cout<<to_ip<< "' , '"<< end_cmd_sig<<"' \n"; }
   return end_sig_ret;
 }
@@ -503,6 +512,36 @@ struct remotehos_info Server::get_host(int sock){
   return host;
 }
 
+int Server::custom_send(int socket, string msg){
+  int send_ret = 0; 
+  uint32_t msg_length = htonl(msg.size());
+  
+  send_ret= send(socket, &msg_length, sizeof(uint32_t), 0);
+  if(send_ret == -1) perror("ERROR: Faliled to send the data length\n");
+
+  send_ret = send(socket, msg.c_str(), msg_length, 0);
+  if(send_ret == -1) perror("ERROR: Faliled to send the data\n");
+
+  return send_ret;
+
+}
+
+int Server::custom_recv(int socket, string &buffer ){
+  int recv_ret = 0;
+  uint32_t dataLength;
+  vector<char> buff; 
+
+  recv_ret = recv(socket, &dataLength, sizeof(uint32_t), 0);
+  if(recv_ret == -1) perror("Error: Failed to get the data length from host\n");
+
+  buff.resize(dataLength, '\0');
+  recv_ret = recv(socket, &(buff[0]), dataLength, 0);
+  if(recv_ret == -1) perror("Error: Failed to get the data from host\n");
+
+  buffer.append(buff.cbegin(), buff.cend());
+
+  return recv_ret;
+}
 
 
 

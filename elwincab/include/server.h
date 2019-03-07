@@ -86,6 +86,9 @@ private:
   struct remotehos_info* get_host_ptr(int sock);
   struct remotehos_info get_host(int sock);
 
+  int custom_send(int socket, string msg);
+  int custom_recv(int socket, string &buffer);
+
 
 
   /*shell commands*/
