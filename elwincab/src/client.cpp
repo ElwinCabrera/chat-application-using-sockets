@@ -69,8 +69,8 @@ void Client::start_client(){
 
   while(!exit_program){
     memcpy(&read_fds, &master_fds, sizeof(master_fds));
-    cout<<"> ";
-    fflush(stdout);
+    //cout<<"> ";
+    //fflush(stdout);
 
     int select_res = select(max_socket +1, &read_fds, NULL, NULL, NULL);
     if(select_res <0) cout<< "Select failed\n";
@@ -241,7 +241,7 @@ void Client::cmd_list(){
   cmd_success_start(LIST);
   for(int i =0; i<peers.size(); i++){
     struct peer_info* pi = peers.at(i);
-    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i, pi->hostname, pi->ip, pi->port);
+    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i, pi->hostname, (pi->ip).c_str(), pi->port);
   }
   cmd_end(LIST);
 

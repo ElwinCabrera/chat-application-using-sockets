@@ -78,9 +78,9 @@ void Server::start_server(){
   
   listen(listen_socket, 5);
 
+  cout<<"> ";
   while(true){
-    cout<<"> ";
-    fflush(stdout);
+    
     memcpy(&read_fds, &master_fds, sizeof(master_fds));
 
     int select_res = select(max_socket +1, &read_fds, NULL, NULL, NULL);
@@ -98,13 +98,15 @@ void Server::start_server(){
 
           handle_shell_cmds(cmd);
           cout<<"> ";
+          fflush(stdout);
 
         } else if(i == listen_socket){ // true = a client is trying to connect to us, shall we choose to accept
           handle_new_conn_request();
+          fflush(stdout);
 
         } else { // if its not a new connection or stdin then it must be an existing connection trying to communicate witn us (we got some data)
           recv_data_from_conn_sock(i);
-
+          fflush(stdout);
         }
 
         
