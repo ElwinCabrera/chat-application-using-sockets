@@ -38,14 +38,16 @@ private:
     bool loggedin;
     bool exit_program;
     vector<string> cmds;
-    vector<struct peer_info*> peers;
+    vector<struct peer_info> peers;
 
     void handle_shell_cmds(string stdin_string);
     int receive_data_from_host();
     struct sockaddr_in* populate_addr(string hname_or_ip, int port);
     int connect_to_host(string server_ip, int port);
     string get_ip_from_sa(struct sockaddr_in *sa);
-    struct peer_info* get_pi_from_ip(string ip);
+    struct peer_info get_peer(string ip);
+    struct peer_info* get_peer_ptr(string ip);
+
     int send_cmds_to_server();
 
     void cmd_list();
@@ -56,7 +58,6 @@ private:
     int custom_send(int socket, string msg);
     int custom_recv(int socket, string &buffer);
 
-    void delete_peers_list();
     void serv_res_refresh(string data);
     void serv_res_relay_brod(string data);
     void serv_res_success(string cmd_end);
