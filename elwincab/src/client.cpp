@@ -204,7 +204,10 @@ int Client::connect_to_host(string server_ip, int port){
     server_saddr = populate_addr(server_ip, port);
     int connect_ret = connect(my_socket, (struct sockaddr*) server_saddr, sizeof(*server_saddr));
     if(connect_ret ==  -1) perror("failed to connect to remote host\n");
-    if(connect_ret ==  0 && server_saddr) { perror("connected to '"); cout<<get_ip_from_sa(server_saddr)<<"' succesfuly\n"; }
+    if(connect_ret ==  0 && server_saddr) cout<<"connected to '"<< get_ip_from_sa(server_saddr)<<"' succesfuly\n";
+
+    connect_ret = custom_send(my_socket, "HOSTNAME:"+my_hostname);
+    if(connect_ret == -1) { cout<< "could not send hostname to host"; perror(""); cout<<"\n"; }
     return connect_ret;
 }
 
@@ -257,13 +260,18 @@ void Client::cmd_login(string host_ip, int port){
 
 void Client::cmd_logout(){
   int ret = close(my_socket);
+  FD_CLR(my_socket, &master_fds);
+  max_socket =0;
   if(ret !=0) {cmd_error(LOGOUT); return;}
   cmd_success_start(LOGOUT);
   cmd_end(LOGOUT);
+  loggedin = false;
 }
 void Client::cmd_exit(){
   int ret = close(my_socket);
   if(ret !=0) {cmd_error(EXIT); return;}
+  FD_CLR(my_socket, &master_fds);
+  max_socket =0;
   cmd_success_start(EXIT);
   cmd_end(EXIT);
   exit_program = true;

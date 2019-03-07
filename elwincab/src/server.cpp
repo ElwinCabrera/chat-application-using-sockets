@@ -252,13 +252,13 @@ int Server::recv_data_from_conn_sock(int idx_socket){
   int bytes_recvd = custom_recv(idx_socket, data);
   //string data(recvd_data);
   struct remotehos_info host = get_host(idx_socket); // nullptr if not in conn_his 
-  cout<< "got '"<<data<<"' from client '"<<host.ip<<"' \n";     //DEBUG
-  fflush(stdout);
+  
 
   //check if data is zero
   if(bytes_recvd != 0 ){
     client_cmds.erase(client_cmds.begin(),client_cmds.end());
-    cout<<data<<endl; // DEBUG
+    cout<< "got '"<<data<<"' from client '"<<host.ip<<"' \n";     //DEBUG
+    fflush(stdout);
     stringstream data_ss(data);
     string cmd, token;
     while (getline(data_ss, token, ' ')) {client_cmds.push_back(token);}
@@ -328,8 +328,8 @@ void Server::relay_msg_to(string src_ip, string dest_ip, string msg){
     if(bytes_sent == -1) { perror("ERROR: In sending to '"); cout<< dest_ip<<"'\n"; return;}
     
     int send_end_ret = 0;
-    if(client_cmds.at(0).compare(BROADCAST)) send_end_cmd(dest_host.sock, BROADCAST_END, dest_ip);
-    if(client_cmds.at(0).compare(SEND)) send_end_cmd(dest_host.sock, SEND_END, dest_ip);
+    if(client_cmds.at(0).compare(BROADCAST) == 0) send_end_cmd(dest_host.sock, BROADCAST_END, dest_ip);
+    if(client_cmds.at(0).compare(SEND) == 0) send_end_cmd(dest_host.sock, SEND_END, dest_ip);
 
     //dst_host->msg_bytes_rx += sizeof(msg);
     //add_msg_bytes_rx(dest_ip, sizeof(msg));
@@ -375,12 +375,12 @@ void Server::send_current_client_list(struct remotehos_info host){
   int send_ret =0;
 
   //send_ret = send(host.sock, REFRESH_START,sizeof(REFRESH_START),0);
-  send_ret = custom_send(host.sock, "REFRESH_START");
+  send_ret = custom_send(host.sock, REFRESH_START);
   if(send_ret == -1) { perror("ERROR: In sending start 'REFRESH_START' msg to "); cout<<host.ip<<endl; return; }
 
   for(int i=0; i< conn_his.size(); i++){
     struct remotehos_info h = conn_his.at(i);
-    if(!h.loggedin || host.ip.compare(h.ip) ) continue;
+    if(!h.loggedin /*|| host.ip.compare(h.ip)*/ ) continue;
     h_hostname = h.hostname;
     h_ip = h.ip;
     //string prt;
@@ -391,7 +391,7 @@ void Server::send_current_client_list(struct remotehos_info host){
     string send_data = "REFRESH:"+h_hostname+","+h_ip+","+h_port;
 
     //send_ret = send(host.sock, send_data.c_str(),sizeof(send_data),0);
-    send_ret = custom_send(host.sock, REFRESH_START);
+    send_ret = custom_send(host.sock, send_data);
     if(send_ret == -1) { perror("ERROR: In sending 'REFRESH' msg to '"); cout<< host.ip<<"' of entry#"<<i<<endl;  return; }
   }
   send_end_cmd(host.sock, REFRESH_END, host.ip);
@@ -516,8 +516,8 @@ struct remotehos_info Server::get_host(int sock){
 
 int Server::custom_send(int socket, string msg){
   int send_ret = 0; 
-  msg += '\0';
-  uint32_t msg_length = htonl(msg.size());
+  //msg += '\0';
+  uint32_t msg_length = htonl(sizeof(msg));
   
   send_ret= send(socket, &msg_length, sizeof(uint32_t), 0);
   if(send_ret == -1) perror("ERROR: Faliled to send the data length ");
