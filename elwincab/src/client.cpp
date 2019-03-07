@@ -69,6 +69,8 @@ void Client::start_client(){
 
   while(!exit_program){
     memcpy(&read_fds, &master_fds, sizeof(master_fds));
+    cout<<"> ";
+    fflush(stdout);
 
     int select_res = select(max_socket +1, &read_fds, NULL, NULL, NULL);
     if(select_res <0) cout<< "Select failed\n";
@@ -84,7 +86,7 @@ void Client::start_client(){
 
         } else if(i == my_socket){ // ready to receve data from CONNECTED remote host or if doing p2p then peer is requesting to be connected to us
           //handle_new_conn_request();
-          receive_data_from_host();
+          if(loggedin) receive_data_from_host();
 
         } else { // in p2p, we are ready to receve data
           //recv_data_from_conn_sock(i);
@@ -343,7 +345,7 @@ int Client::custom_recv(int socket, string &buffer ){
   recv_ret = recv(socket, &dataLength, sizeof(uint32_t), 0);
   if(recv_ret == -1) perror("Error: Failed to get the data length from host\n");
 
-  buff.resize(dataLength, '\n');
+  buff.resize(dataLength, '\0');
   recv_ret = recv(socket, &(buff[0]), dataLength, 0);
   if(recv_ret == -1) perror("Error: Failed to get the data from host\n");
 

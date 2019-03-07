@@ -75,7 +75,7 @@ void Server::start_server(){
 
   debug_dump();
 
-  cout<<"> ";
+  
   listen(listen_socket, 5);
 
   while(true){
