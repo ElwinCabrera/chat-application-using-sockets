@@ -245,7 +245,7 @@ int Client::send_cmds_to_server(){
         msg += cmds.at(i);
         if(i != cmds_size -1) msg+=" "; // we don't want to add a space at the end
     }
-    cout<< "final msg that will be sent is '"<<msg<<"' of size "<<msg.size()<<"\n";
+    
     if(loggedin) 
     send_ret = custom_send(my_socket, msg);
     if(send_ret ==  -1) { perror("failed to send message to remote host msg: '"); cout<<msg<<"' \n"; }
@@ -343,6 +343,8 @@ int Client::custom_send(int socket, string msg){
   send_ret= send(socket, &msg_length, sizeof(uint32_t), 0);
   if(send_ret == -1) perror("ERROR: Faliled to send the data length ");
 
+  cout<< "sending '"<<msg<<"' of size "<<sizeof(msg)<<"\n";
+
   send_ret = send(socket, msg.c_str(), sizeof(msg), 0);
   if(send_ret == -1) perror("ERROR: Faliled to send the data ");
 
@@ -360,7 +362,7 @@ int Client::custom_recv(int socket, string &buffer ){
   dataLength = ntohl(dataLength);
 
   buff.resize(dataLength+1, '\0');
-  recv_ret = recv(socket, &(buff[0]), dataLength, 0);
+  recv_ret = recv(socket, &buff[0], dataLength, 0);
   if(recv_ret == -1) perror("Error: Failed to get the data from host ");
 
   buffer.append(buff.cbegin(), buff.cend());

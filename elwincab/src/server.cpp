@@ -502,6 +502,8 @@ int Server::custom_send(int socket, string msg){
   send_ret= send(socket, &msg_length, sizeof(uint32_t), 0);
   if(send_ret == -1) perror("ERROR: Faliled to send the data length ");
 
+  cout<< "sending '"<<msg<<"' of size "<<sizeof(msg)<<"\n";
+ 
   send_ret = send(socket, msg.c_str(), sizeof(msg), 0);
   if(send_ret == -1) perror("ERROR: Faliled to send the data ");
 
