@@ -344,6 +344,7 @@ int Client::custom_recv(int socket, string &buffer ){
 
   recv_ret = recv(socket, &dataLength, sizeof(uint32_t), 0);
   if(recv_ret == -1) perror("Error: Failed to get the data length from host\n");
+  dataLength = ntohl(dataLength);
 
   buff.resize(dataLength, '\0');
   recv_ret = recv(socket, &(buff[0]), dataLength, 0);

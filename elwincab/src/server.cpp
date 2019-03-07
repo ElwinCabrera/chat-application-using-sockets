@@ -373,7 +373,7 @@ void Server::send_current_client_list(struct remotehos_info host){
   int send_ret =0;
 
   //send_ret = send(host.sock, REFRESH_START,sizeof(REFRESH_START),0);
-  send_ret = custom_send(host.sock, REFRESH_START);
+  send_ret = custom_send(host.sock, "REFRESH_START");
   if(send_ret == -1) { perror("ERROR: In sending start 'REFRESH_START' msg to "); cout<<host.ip<<endl; return; }
 
   for(int i=0; i< conn_his.size(); i++){
@@ -514,13 +514,14 @@ struct remotehos_info Server::get_host(int sock){
 
 int Server::custom_send(int socket, string msg){
   int send_ret = 0; 
+  msg += '\0';
   uint32_t msg_length = htonl(msg.size());
   
   send_ret= send(socket, &msg_length, sizeof(uint32_t), 0);
-  if(send_ret == -1) perror("ERROR: Faliled to send the data length\n");
+  if(send_ret == -1) perror("ERROR: Faliled to send the data length ");
 
-  send_ret = send(socket, msg.c_str(), msg_length, 0);
-  if(send_ret == -1) perror("ERROR: Faliled to send the data\n");
+  send_ret = send(socket, msg.c_str(), sizeof(msg), 0);
+  if(send_ret == -1) perror("ERROR: Faliled to send the data ");
 
   return send_ret;
 
@@ -532,11 +533,12 @@ int Server::custom_recv(int socket, string &buffer ){
   vector<char> buff; 
 
   recv_ret = recv(socket, &dataLength, sizeof(uint32_t), 0);
-  if(recv_ret == -1) perror("Error: Failed to get the data length from host\n");
-
+  if(recv_ret == -1) perror("Error: Failed to get the data length from host ");
+  dataLength = ntohl(dataLength);
+  
   buff.resize(dataLength, '\0');
   recv_ret = recv(socket, &(buff[0]), dataLength, 0);
-  if(recv_ret == -1) perror("Error: Failed to get the data from host\n");
+  if(recv_ret == -1) perror("Error: Failed to get the data from host ");
 
   buffer.append(buff.cbegin(), buff.cend());
 
