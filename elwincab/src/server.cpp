@@ -250,8 +250,8 @@ int Server::recv_data_from_conn_sock(int idx_socket){
   //check if data is zero
   if(bytes_recvd != 0 && host.loggedin){
     client_cmds.erase(client_cmds.begin(),client_cmds.end());
-    cout<< "got '"<<data<<"' from client '"<<host.ip<<"' \n";     //DEBUG
-    fflush(stdout);
+    //cout<< "got '"<<data<<"' from client '"<<host.ip<<"' \n";     //DEBUG
+    //fflush(stdout);
     stringstream data_ss(data);
     string cmd, token;
     while (getline(data_ss, token, ' ')) {client_cmds.push_back(token);}
@@ -309,7 +309,7 @@ void Server::relay_msg_to_all(string src_ip, string msg){
 void Server::relay_msg_to(string src_ip, string dest_ip, string msg){
   //check if the destined client has not blocked this client if so then dont do anything
   struct remotehos_info dest_host = get_host(dest_ip);
-  if(dest_ip_blocking_src_ip(src_ip, dest_ip)) return;
+  if(dest_ip_blocking_src_ip(src_ip, dest_ip) || dest_ip.compare(src_ip) ==0 ) return;
 
   int bytes_sent = 0;
   //check if the destined client is logged in if not then buffer the messege
@@ -363,7 +363,7 @@ void Server::send_current_client_list(struct remotehos_info host){
 
   for(int i=0; i< conn_his.size(); i++){
     struct remotehos_info h = conn_his.at(i);
-    if(!h.loggedin /*|| host.ip.compare(h.ip) ==0*/ ) continue;
+    if(!h.loggedin || host.ip.compare(h.ip) ==0 ) continue;
     h_hostname = h.hostname;
     h_ip = h.ip;
 
@@ -497,14 +497,14 @@ struct remotehos_info Server::get_host(int sock){
 int Server::custom_send(int socket, string msg){
   int send_ret = 0; 
   //msg += '\0';
-  uint32_t msg_length = htonl(sizeof(msg));
+  uint32_t msg_length = htonl(msg.size());
   
   send_ret= send(socket, &msg_length, sizeof(uint32_t), 0);
   if(send_ret == -1) perror("ERROR: Faliled to send the data length ");
 
-  cout<< "sending '"<<msg<<"' of size "<<sizeof(msg)<<"\n";
+  cout<< "sending '"<<msg<<"' of size "<<msg.size()<<"\n";
  
-  send_ret = send(socket, msg.c_str(), sizeof(msg), 0);
+  send_ret = send(socket, msg.c_str(), msg.size(), 0);
   if(send_ret == -1) perror("ERROR: Faliled to send the data ");
 
   return send_ret;
@@ -525,6 +525,8 @@ int Server::custom_recv(int socket, string &buffer ){
   if(recv_ret == -1) perror("Error: Failed to get the data from host ");
 
   buffer.append(buff.cbegin(), buff.cend());
+
+  cout<< "Got '"<<buffer<<"' of size " << dataLength <<" from " << get_host(socket).ip<<"\n";
 
   return recv_ret;
 }

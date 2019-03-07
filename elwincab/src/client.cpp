@@ -338,14 +338,14 @@ void Client::serv_res_success(string cmd_fin){
 
 int Client::custom_send(int socket, string msg){
   int send_ret; 
-  uint32_t msg_length = htonl(sizeof(msg));
+  uint32_t msg_length = htonl(msg.size());
   
   send_ret= send(socket, &msg_length, sizeof(uint32_t), 0);
   if(send_ret == -1) perror("ERROR: Faliled to send the data length ");
 
-  cout<< "sending '"<<msg<<"' of size "<<sizeof(msg)<<"\n";
+  cout<< "sending '"<<msg<<"' of size "<<msg.size()<<"\n";
 
-  send_ret = send(socket, msg.c_str(), sizeof(msg), 0);
+  send_ret = send(socket, msg.c_str(), msg.size(), 0);
   if(send_ret == -1) perror("ERROR: Faliled to send the data ");
 
   return send_ret;
@@ -366,6 +366,8 @@ int Client::custom_recv(int socket, string &buffer ){
   if(recv_ret == -1) perror("Error: Failed to get the data from host ");
 
   buffer.append(buff.cbegin(), buff.cend());
+
+  cout<< "Got '"<<buffer<<"'\n";
 
   return recv_ret;
 }
