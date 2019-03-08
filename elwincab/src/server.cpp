@@ -224,12 +224,10 @@ void Server::check_and_send_stored_msgs(string dest_ip){
 
   if(it  != stored_msgs.end()){
     cout<< "You got some new messages while you were away"<<endl;
-    vector<pair<string, string>> from_msg = it->second;
+    vector< pair<string, string> > from_msg = it->second;
     for(auto itr = from_msg.begin(); itr != from_msg.end(); itr++){
       
       relay_msg_to(get_host(itr->first).ip, dest_ip,  itr->second);
-      cout<<"sending msg to '"<<dest_ip <<" from: "<<itr->first<<endl;
-      cout<<"\tmsg: "<<itr->second<<endl;
     }
     stored_msgs.erase(it);
   }
@@ -325,8 +323,8 @@ void Server::unblock(struct remotehos_info host, string new_block_ip){
 
 
 void Server::relay_msg_to_all(string src_ip, string msg){
-  for(auto &itr : conn_his ){
-    relay_msg_to(src_ip, itr.ip, msg);
+  for(int i=0; i<conn_his.size(); i++ ){
+    relay_msg_to(src_ip, conn_his.at(i).ip, msg);
   }
 }
 
