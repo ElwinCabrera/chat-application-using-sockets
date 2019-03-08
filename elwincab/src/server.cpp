@@ -236,17 +236,15 @@ int Server::recv_data_from_conn_sock(int idx_socket){
   string data;
  
   int bytes_recvd = custom_recv(idx_socket, data);
-  struct remotehos_info host = get_host(idx_socket); // nullptr if not in conn_his 
+  struct remotehos_info host = get_host(idx_socket); 
   
 
   //check if data is zero
   if(bytes_recvd != 0 && host.loggedin){
     client_cmds.erase(client_cmds.begin(),client_cmds.end());
-    //cout<< "got '"<<data<<"' from client '"<<host.ip<<"' \n";     //DEBUG
-    //fflush(stdout);
+   
     stringstream data_ss(data);
     string cmd, token;
-    //while (getline(data_ss, token, ' ')) {client_cmds.push_back(token);}
     
     getline(data_ss, token, ' ');
     client_cmds.push_back(token);
@@ -361,7 +359,6 @@ void Server::relay_msg_to(string src_ip, string dest_ip, string msg){
 
 
 void Server::send_current_client_list(struct remotehos_info host){
-  string h_hostname, h_ip, h_port;
   sort(conn_his.begin(), conn_his.end(), sort_hosts_by_port);
   int send_ret =0;
 
@@ -372,14 +369,12 @@ void Server::send_current_client_list(struct remotehos_info host){
   for(int i=0; i< conn_his.size(); i++){
     struct remotehos_info h = conn_his.at(i);
     if(!h.loggedin || host.ip.compare(h.ip) ==0 ) continue;
-    h_hostname = h.hostname;
-    h_ip = h.ip;
 
-    stringstream ss;
-    ss << h.port;
-    h_port = ss.str();
+    //stringstream ss;
+    //ss << h.port;
+    //h_port = ss.str();
 
-    string send_data = "REFRESH:"+h_hostname+","+h_ip+","+h_port;
+    string send_data = "REFRESH:"+h.hostname+","+h.ip+","+itos(h.port);
 
     //send_ret = send(host.sock, send_data.c_str(),sizeof(send_data),0);
     send_ret = custom_send(host.sock, send_data);
@@ -552,10 +547,10 @@ void Server::cmd_list(){ //get list of logged in hosts sorted by port number
     struct remotehos_info h = conn_his.at(i);
     if(!h.loggedin) continue;
 
-    stringstream ss;
-    ss << h.port;
-    string prt = ss.str();
-    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), h.ip.c_str(), prt.c_str());
+    //stringstream ss;
+    //ss << h.port;
+    //string prt = ss.str();
+    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), h.ip.c_str(), itos(h.port).c_str());
   }
   cmd_end("LIST");
 }
@@ -593,10 +588,11 @@ void Server::cmd_blocked(string ip){
   
   for(int i =0; i< blocked_hosts.size(); i++){
     struct remotehos_info h = blocked_hosts.at(i);
-    stringstream ss;
-    ss << h.port;
-    string prt = ss.str();
-    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), (h.ip).c_str(), prt.c_str());
+    //stringstream ss;
+    //ss << h.port;
+    //string prt = ss.str();
+    
+    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), (h.ip).c_str(), itos(h.port).c_str());
   }
   cmd_end("BLOCKED");
   

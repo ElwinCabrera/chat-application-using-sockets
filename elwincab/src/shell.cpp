@@ -59,3 +59,18 @@ bool is_valid_ip(string ip){
 
   return false;
 }
+
+string itos(int num){
+  string ret;
+  vector<char> chars;
+
+  while(num){
+    int least_sig_digit = num %10;
+    char c = least_sig_digit + '0';
+    chars.push_back(c);
+    num /= 10;
+  }
+  for(int i=chars.size()-1; i>=0; i--) ret.push_back(chars.at(i)); 
+  
+  return ret;
+}

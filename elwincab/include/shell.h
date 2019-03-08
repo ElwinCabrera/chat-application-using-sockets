@@ -18,5 +18,7 @@ void cmd_port(int port);
 
 void event_msg_recvd(string from_ip, string msg);
 void event_msg_relayed(string from_ip, string to_ip, string msg);
+
+string itos(int num);
 bool is_valid_ip(string ip);
 #endif // SHELL_H
