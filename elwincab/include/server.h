@@ -50,8 +50,8 @@ private:
   vector<string> cmds;
   vector<string> client_cmds;
   vector<struct remotehos_info> conn_his;
-  map<string, vector<pair<string, string>> > stored_msgs;
-  map<string, vector<pair<string, string>> >::iterator it;
+  map<string, vector<pair<string, string> > > stored_msgs;
+  map<string, vector<pair<string, string> > >::iterator it;
 
 
 
