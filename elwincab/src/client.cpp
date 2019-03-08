@@ -259,7 +259,7 @@ void Client::cmd_list(){
     stringstream ss;
     ss << peer.port;
     string prt = ss.str();
-    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (peer.hostname).c_str(), (peer.ip).c_str(), ss.str().c_str());
+    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (peer.hostname).c_str(), (peer.ip).c_str(), prt.c_str());
   }
   cmd_end(LIST);
 
