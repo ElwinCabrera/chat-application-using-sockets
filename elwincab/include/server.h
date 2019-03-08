@@ -26,6 +26,8 @@ struct remotehos_info{
   bool loggedin;
   string hostname;
   string ip;
+  vector<string> stored_msg_from_ips;
+  vector<string> stored_msgs;
   vector<struct remotehos_info> blocked_hosts;
   struct sockaddr_in *sa;
 };
@@ -50,10 +52,6 @@ private:
   vector<string> cmds;
   vector<string> client_cmds;
   vector<struct remotehos_info> conn_his;
-  map<string, vector<pair<string, string> > > stored_msgs;
-  map<string, vector<pair<string, string> > >::iterator it;
-
-
 
   static bool sort_hosts_by_port(struct remotehos_info host1, struct remotehos_info host2) { return host1.port < host2.port; }
 
@@ -74,6 +72,8 @@ private:
 
   int send_end_cmd(int socket, string end_cmd_sig, string to_ip);
   int close_remote_conn(int socket);
+  int logout_host(int socket);
+  int clear_and_close_sock(int socket);
 
   /*some helper and getter functions */
   bool host_in_history(string ip);

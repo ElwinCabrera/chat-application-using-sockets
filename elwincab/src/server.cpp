@@ -216,22 +216,15 @@ int Server::handle_new_conn_request(){
 }
 
 void Server::check_and_send_stored_msgs(string dest_ip){
-  if(stored_msgs.empty()) return;
+  struct remotehos_info *host = get_host_ptr(dest_ip);
 
-  it = stored_msgs.begin();
-
-  it = stored_msgs.find(dest_ip);
-
-  if(it  != stored_msgs.end()){
-    cout<< "You got some new messages while you were away"<<endl;
-    vector< pair<string, string> > from_msg = it->second;
-    for(auto itr = from_msg.begin(); itr != from_msg.end(); itr++){
-      
-      relay_msg_to(get_host(itr->first).ip, dest_ip,  itr->second);
-    }
-    stored_msgs.erase(it);
+  for(int i=0; i<host->stored_msgs.size(); i++){
+    string from_ip = host->stored_msg_from_ips.at(i);
+    string msg = host->stored_msgs.at(i);
+    relay_msg_to(from_ip, dest_ip,  msg);
+    host->stored_msg_from_ips.erase(host->stored_msg_from_ips.begin()+i);
+    host->stored_msgs.erase(host->stored_msgs.begin()+i);
   }
-
 }
 
 /*if this function returns -1 then socket is not in the list of conn_socks (defined as vector)*/
@@ -351,21 +344,11 @@ void Server::relay_msg_to(string src_ip, string dest_ip, string msg){
     event_msg_relayed(src_ip, dest_ip, msg);
 
   } else {
-    
-    pair<string, string> from_and_msg;
-    from_and_msg.first = src_ip;
-    from_and_msg.second = msg;
-    it = stored_msgs.begin();
-    it = stored_msgs.find(dest_ip);
+    struct remotehos_info *h = get_host_ptr(dest_ip);
+    h->stored_msg_from_ips.push_back(src_ip);
+    h->stored_msgs.push_back(msg);
 
-    if(it == stored_msgs.end()){ //currently there are no stored messages for dst_ip
-      vector<pair<string,string>> from_and_msg_vec;
-      from_and_msg_vec.push_back(from_and_msg);
-      stored_msgs.insert(make_pair(dest_ip, from_and_msg_vec));
-    } else { // an entry exists so just 
-      it->second.push_back(from_and_msg);
-    }
-  }
+    } 
   
   get_host_ptr(src_ip)->msg_bytes_tx += bytes_sent;
   
@@ -413,30 +396,29 @@ int Server::send_end_cmd(int socket, string end_cmd_sig, string to_ip){
 }
 
 int Server::close_remote_conn(int socket){
-  int success = 0;
-  string ip;
 
   for(uint i = 0; i<conn_his.size(); i++){
-    struct remotehos_info h = conn_his.at(i);
-    if(h.sock == socket){
-      ip = h.ip;
-      conn_his.erase(conn_his.begin()+i);
-    }
+    if(conn_his.at(i).sock == socket) conn_his.erase(conn_his.begin()+i);
   }
+  return clear_and_close_sock(socket);
+}
 
-  it = stored_msgs.begin();
-  it = stored_msgs.find(ip);
-  if(it != stored_msgs.end()) stored_msgs.erase(it);
+int Server::logout_host(int socket){
+  get_host_ptr(socket)->loggedin = false;
+  return clear_and_close_sock(socket);
+}
 
+int Server::clear_and_close_sock(int socket){
   //remove from master fd list and pick a new maxsocket
+  int success = 0;
   FD_CLR(socket, &master_fds);
   max_socket =0 ;
-  for(auto &itr : conn_his){ if(itr.sock > max_socket) max_socket = itr.sock;  }
+  for(int i =0; i<conn_his.size(); i++){ if(conn_his.at(i).sock > max_socket) max_socket = conn_his.at(i).sock;  }
 
   success = close(socket);
   if(success != 0) { perror("ERROR: Failed to close socket#"); cout<<socket<<"\n"; }
+  return success; 
 
-  return success;
 }
 
 
