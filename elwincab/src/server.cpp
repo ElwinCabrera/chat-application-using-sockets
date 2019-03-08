@@ -548,7 +548,7 @@ int Server::custom_recv(int socket, string &buffer ){
   recv_ret = recv(socket, &(buff[0]), dataLength, 0);
   if(recv_ret == -1) perror("Error: Failed to get the data from host ");
 
-  buffer.append(buff.cbegin(), buff.cend());
+  buffer.append(buff.begin(), buff.end());
 
   cout<< "Got '"<<buffer<<"' of size " << dataLength <<" from " << get_host(socket).ip<<"\n";
 
