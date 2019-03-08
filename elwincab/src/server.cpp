@@ -172,7 +172,7 @@ void Server::handle_shell_cmds(string cmd){
   if(cmds.at(0).compare(PORT) == 0) cmd_port(portnum);
   if(cmds.at(0).compare(LIST) == 0) cmd_list();
   if(cmds.at(0).compare(STATISTICS) == 0) cmd_statistics();
-  if(cmds.at(0).compare(BLOCKED) == 0) cmd_blocked(cmds.at(1));
+  if(cmds.at(0).compare(BLOCKED) == 0) cmd_blocked(cmds.at(0));
 }
 
 /*if this function returns a number other than 0 then the new connection could not be established*/
