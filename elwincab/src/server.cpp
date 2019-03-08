@@ -191,7 +191,7 @@ int Server::handle_new_conn_request(){
   string ip = get_sa_ip(&cli_addr);
   cout<< "Remote client '" <<ip<<"' successfuly connected\n";
   
-  check_and_send_stored_msgs(ip);
+  
   
 
   if(new_conn_sock > max_socket) max_socket = new_conn_sock;
@@ -209,6 +209,7 @@ int Server::handle_new_conn_request(){
     cout<< "New client IP:"<<ip<<endl;
   } else {
     cout<<"Client "<<ip<<" logged back in\n";
+    check_and_send_stored_msgs(ip);
     get_host_ptr(ip)->loggedin = true;
   }
   send_current_client_list(new_host);
@@ -217,10 +218,12 @@ int Server::handle_new_conn_request(){
 
 void Server::check_and_send_stored_msgs(string dest_ip){
   struct remotehos_info *host = get_host_ptr(dest_ip);
+  vector<string> stored_msg_from_ips = host->stored_msg_from_ips;
+  vector<string> stored_msgs = host->stored_msgs;
 
-  for(int i=0; i<host->stored_msgs.size(); i++){
-    string from_ip = host->stored_msg_from_ips.at(i);
-    string msg = host->stored_msgs.at(i);
+  for(int i=0; i<stored_msgs.size(); i++){
+    string from_ip = stored_msg_from_ips.at(i);
+    string msg = stored_msgs.at(i);
     relay_msg_to(from_ip, dest_ip,  msg);
     host->stored_msg_from_ips.erase(host->stored_msg_from_ips.begin()+i);
     host->stored_msgs.erase(host->stored_msgs.begin()+i);
@@ -580,11 +583,10 @@ void Server::cmd_statistics(){
 void Server::cmd_blocked(string ip){
   //The output should display the hostname, IP address, and the listening port numbers of the bloked clents
   struct remotehos_info host = get_host(ip);
-  cout<<"IN FUNCTION 'cmd_blocked' "<<endl;
   cmd_success_start("BLOCKED");
   
   vector<struct remotehos_info> blocked_hosts = host.blocked_hosts;
-  if(blocked_hosts.empty()) {cout<< ip<<" has not blocked anyone\n"; return;}
+  if(blocked_hosts.empty()) cout<< ip<<" has not blocked anyone\n"; 
 
   sort(blocked_hosts.begin(), blocked_hosts.end(), sort_hosts_by_port);
   
