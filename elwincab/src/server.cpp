@@ -46,7 +46,7 @@ Server::Server(string port){
 
   gethostname(my_hostname, sizeof(my_hostname));
 
-  my_saddr = populate_addr(my_hostname, portnum);
+  my_saddr = populate_addr(my_hostname, port);
   my_ip = get_sa_ip(my_saddr);
 
   sock_and_bind();
@@ -125,16 +125,14 @@ get all information such as IP, socket tyoe, protocal ect..
 all this information is stored in a struct addrinfo *ai
 we will most likely use this to get our own information for later use
 if error occurs then it will retrn non-zero*/
-struct sockaddr_in* Server::populate_addr(string hname_or_ip, int port){
+struct sockaddr_in* Server::populate_addr(string hname_or_ip, string port){
   struct addrinfo hints;
   struct addrinfo *ai;
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
 
-  stringstream ss;
-  ss << port;
-  int gai_ret = getaddrinfo(hname_or_ip.c_str(), ss.str().c_str(), &hints, &ai);
+  int gai_ret = getaddrinfo(hname_or_ip.c_str(), port.c_str(), &hints, &ai);
   if (gai_ret !=0) cout<< "getaddrinfo: "<< gai_strerror(gai_ret) <<endl;
   return (struct sockaddr_in*) ai->ai_addr;
 
@@ -254,18 +252,44 @@ int Server::recv_data_from_conn_sock(int idx_socket){
     //fflush(stdout);
     stringstream data_ss(data);
     string cmd, token;
-    while (getline(data_ss, token, ' ')) {client_cmds.push_back(token);}
+    //while (getline(data_ss, token, ' ')) {client_cmds.push_back(token);}
     
-    
+    getline(data_ss, token, ' ');
+    client_cmds.push_back(token);
 
-    if(client_cmds.at(0).compare(BROADCAST) == 0) relay_msg_to_all(host.ip,client_cmds.at(1));  // foramt the string to look like RELAYED:from_ip,msg
-    if(client_cmds.at(0).compare(LOGOUT) == 0) get_host_ptr(host.ip)->loggedin = false; 
-    if(client_cmds.at(0).compare(REFRESH) == 0) send_current_client_list(host);  //need implement 
-    if(client_cmds.at(0).compare(BLOCK) == 0 ) block(host, client_cmds.at(1));  // if trying to block self wont work
-    if(client_cmds.at(0).compare(UNBLOCK) == 0) unblock(host, client_cmds.at(1)); 
-    if(client_cmds.at(0).compare(SEND) == 0) relay_msg_to(host.ip, client_cmds.at(1), client_cmds.at(2)); 
+    if(token.compare(BROADCAST) == 0) {
+      getline(data_ss, token);
+      client_cmds.push_back(token);
+      relay_msg_to_all(host.ip,token);
+    }
+      
+    if(token.compare(BLOCK) == 0 ) {
+      getline(data_ss, token);
+      client_cmds.push_back(token);
+      block(host, token);  
+    }
+    if(token.compare(UNBLOCK) == 0) {
+      getline(data_ss, token);
+      client_cmds.push_back(token);
+      unblock(host, token);
+    } 
+    if(token.compare(SEND) == 0) {
+      string to_ip, msg;
+      getline(data_ss, to_ip, ' ');
+      getline(data_ss, msg);
+      client_cmds.push_back(to_ip);
+      client_cmds.push_back(msg);
+      relay_msg_to(host.ip, to_ip, msg);
+    } 
 
-    if(client_cmds.at(0).compare(HOSTNAME) == 0) get_host_ptr(host.ip)->hostname = client_cmds.at(1);
+    if(token.compare(HOSTNAME) == 0) {
+      getline(data_ss, token);
+      client_cmds.push_back(token);
+      get_host_ptr(host.ip)->hostname = token;
+    }
+
+    if(token.compare(LOGOUT) == 0) get_host_ptr(host.ip)->loggedin = false; 
+    if(token.compare(REFRESH) == 0) send_current_client_list(host);
   } else {
     //close connection
     close_remote_conn(host.sock);
@@ -460,7 +484,7 @@ struct remotehos_info* Server::get_host_ptr(string ip){
     host = &(conn_his.at(i));
     if(ip.compare(host->ip) == 0) return host;
   }
-  return nullptr;
+  return NULL;
 }
 
 struct remotehos_info Server::get_host(string ip){
@@ -481,7 +505,7 @@ struct remotehos_info* Server::get_host_ptr(int sock){
     host = &(conn_his.at(i));
     if(host->sock == sock) return host;
   }
-  return nullptr;
+  return NULL;
 }
 
 struct remotehos_info Server::get_host(int sock){
@@ -539,24 +563,23 @@ int Server::custom_recv(int socket, string &buffer ){
 void Server::cmd_list(){ //get list of logged in hosts sorted by port number
 
   cmd_success_start("LIST");
-  sort(conn_his.begin(), conn_his.end(), sort_hosts_by_port);
-  string ip;
-  char hostname[HOSTNAME_LEN];
-  int port, ni_ret;
+  if(!conn_his.empty()) sort(conn_his.begin(), conn_his.end(), sort_hosts_by_port);
+  
   for(int i =0; i<conn_his.size(); i++){
     struct remotehos_info h = conn_his.at(i);
     if(!h.loggedin) continue;
 
     stringstream ss;
     ss << h.port;
-    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, hostname, h.ip.c_str(), ss.str().c_str());
+    string prt = ss.str();
+    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), h.ip.c_str(), prt.c_str());
   }
   cmd_end("LIST");
 }
 
 void Server::cmd_statistics(){
   cmd_success_start("STATISTICS");
-  sort(conn_his.begin(), conn_his.end(), sort_hosts_by_port);
+  if(!conn_his.empty()) sort(conn_his.begin(), conn_his.end(), sort_hosts_by_port);
   
   string login_status;
   
@@ -590,7 +613,8 @@ void Server::cmd_blocked(string ip){
     struct remotehos_info h = blocked_hosts.at(i);
     stringstream ss;
     ss << h.port;
-    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), (h.ip).c_str(), ss.str().c_str());
+    string prt = ss.str();
+    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), (h.ip).c_str(), prt.c_str());
   }
   cmd_end("BLOCKED");
   

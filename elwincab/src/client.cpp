@@ -206,7 +206,7 @@ int Client::connect_to_host(string server_ip, int port){
     if(connect_ret ==  -1) perror("failed to connect to remote host\n");
     if(connect_ret ==  0 && server_saddr) cout<<"connected to '"<< get_ip_from_sa(server_saddr)<<"' succesfuly\n";
 
-    int send_ret = custom_send(my_socket, "HOSTNAME:"+my_hostname);
+    int send_ret = custom_send(my_socket, "HOSTNAME "+my_hostname);
     if(send_ret == -1) { cout<< "could not send hostname to host"; perror(""); cout<<"\n"; }
     return connect_ret;
 }
@@ -259,7 +259,7 @@ void Client::cmd_list(){
     stringstream ss;
     ss << peer.port;
     string prt = ss.str();
-    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i, (peer.hostname).c_str(), (peer.ip).c_str(), ss.str().c_str());
+    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (peer.hostname).c_str(), (peer.ip).c_str(), ss.str().c_str());
   }
   cmd_end(LIST);
 

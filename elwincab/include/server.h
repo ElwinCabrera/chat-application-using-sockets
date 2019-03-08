@@ -57,7 +57,7 @@ private:
 
   static bool sort_hosts_by_port(struct remotehos_info host1, struct remotehos_info host2) { return host1.port < host2.port; }
 
-  struct sockaddr_in* populate_addr(string hname_or_ip, int port);
+  struct sockaddr_in* populate_addr(string hname_or_ip, string port);
   int sock_and_bind();
   void handle_shell_cmds(string cmd);
   int handle_new_conn_request();
