@@ -376,7 +376,7 @@ void Server::send_current_client_list(struct remotehos_info host){
 
   for(int i=0; i< conn_his.size(); i++){
     struct remotehos_info h = conn_his.at(i);
-    if(!h.loggedin || host.ip.compare(h.ip) ==0 ) continue;
+    if(!h.loggedin ) continue;
 
   
     string send_data = "REFRESH:"+h.hostname+","+h.ip+","+itos(h.port);
