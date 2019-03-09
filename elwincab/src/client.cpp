@@ -55,9 +55,9 @@ Client::Client(string serv_port){
 }
 
 Client::~Client(){
-    if(my_saddr) free(my_saddr);
-    if(server_saddr) free(server_saddr);
-    peers.erase(peers.begin(), peers.end());;
+    //if(my_saddr != NULL) free(my_saddr);
+    //if(server_saddr != NULL ) free(server_saddr);
+    if(!peers.empty()) peers.erase(peers.begin(), peers.end());
 
 }
 
@@ -105,31 +105,33 @@ void Client::handle_shell_cmds(string stdin_string){
     while (getline(cmd_ss, token, ' ')) cmds.push_back(token); 
 
     if (cmds.at(0).compare(AUTHOR) == 0){
-        if(cmds.size() != 1) { cout<< "error: command 'AUTHOR' does not take any arguments\n"; return; }
+        if(cmds.size() != 1) { cout<< "error: command 'AUTHOR' does not take any arguments\n"; cmd_error(cmds.at(0)); return; }
         cmd_author();
     } else if(cmds.at(0).compare(IP) == 0) {
-        if(cmds.size() != 1) { cout<< "error: command 'IP' does not take any arguments\n"; return; }
+        if(cmds.size() != 1) { cout<< "error: command 'IP' does not take any arguments\n"; cmd_error(cmds.at(0)); return; }
         cmd_ip(my_ip);
     } else if (cmds.at(0).compare(PORT) == 0){
-        if(cmds.size() != 1) { cout<< "error: command 'PORT' does not take any arguments\n"; return; }
+        if(cmds.size() != 1) { cout<< "error: command 'PORT' does not take any arguments\n"; cmd_error(cmds.at(0)); return; }
         cmd_port(server_port);
     } else if(cmds.at(0).compare(LIST) == 0){
-        if(cmds.size() != 1) { cout<< "error: command 'LIST' does not take any arguments\n"; return; }
+        if(cmds.size() != 1) { cout<< "error: command 'LIST' does not take any arguments\n"; cmd_error(cmds.at(0)); return; }
         cmd_list();
     } else if(cmds.at(0).compare(LOGIN) == 0){
         
         if(cmds.size() != 3) { 
             cout<< "error: command 'LOGIN' takes 2 arguments\n";
-            cout<< "\texample usage LOGIN <server-ip> <server-port>\n";
+            cout<< "example usage LOGIN <server-ip> <server-port>\n";
+            cmd_error(cmds.at(0));
             return; 
         }
 
         cmd_login( cmds.at(1), atoi(cmds.at(2).c_str()) );
 
     } else if(cmds.at(0).compare(EXIT) == 0){
-        if(cmds.size() != 1) { cout<< "error: command 'EXIT' does not take any arguments\n"; return; }
+        if(cmds.size() != 1) { cout<< "error: command 'EXIT' does not take any arguments\n"; cmd_error(cmds.at(0)); return; }
         cmd_exit();
     } else if(cmds.at(0).compare(LOGOUT) == 0){
+      if(cmds.size() != 1) { cout<< "error: command 'LOGOUT' does not take any arguments\n"; cmd_error(cmds.at(0)); return; }
       cmd_logout();
     } else if( (cmds.at(0).compare(REFRESH) == 0   || 
                 cmds.at(0).compare(SEND) == 0      ||
@@ -137,18 +139,31 @@ void Client::handle_shell_cmds(string stdin_string){
                 cmds.at(0).compare(BLOCK) == 0     || 
                 cmds.at(0).compare(UNBLOCK) == 0 ) ){
 
-                  if(!loggedin) {cout<< "You must be loggedin in order to execute the '"<<cmds.at(0)<<"' command\n"; return;}
+                  if(!loggedin) {
+                    cout<< "You must be loggedin in order to execute the '"<<cmds.at(0)<<"' command\n"; 
+                    cmd_error(cmds.at(0));
+                    return;
+                  }
+
+                  if(cmds.at(0).compare(SEND) == 0 && (cmds.size() < 1 || !is_peer_in_list(cmds.at(1)) ) ){ cmd_error(cmds.at(0)); return; }
+                  if(cmds.at(0).compare(BROADCAST) == 0 && cmds.size() <1) {cmd_error(cmds.at(0)); return; }
+                  if(cmds.at(0).compare(BLOCK) == 0 && (cmds.size() != 2 || !is_peer_in_list(cmds.at(1))  ) ) { cmd_error(cmds.at(0)); return; }
+                  if(cmds.at(0).compare(UNBLOCK) == 0 && (cmds.size() != 2 || !is_peer_in_list(cmds.at(1))  )) { cmd_error(cmds.at(0)); return; }
+                  if(cmds.at(0).compare(REFRESH) == 0 && cmds.size() != 1){ cmd_error(cmds.at(0)); return; }
+
+                  
     
-                  /*if(!errors_in_cmd())*/ send_cmds_to_server();
+                   send_cmds_to_server();
     
     }else{
-      cout << "Unknown command '" ;
+      cout << "Unknown command ' " ;
       for(int i=0; i<cmds.size(); i++){ cout << cmds.at(i)<<" ";}
-      cout<<"'"<<endl;
+      cout<<"'\n";
+      cmd_error(cmds.at(0));
 
     }
-    //cout<< "> ";
 }
+
 
 int Client::receive_data_from_host(){
   string token;
@@ -188,12 +203,7 @@ struct sockaddr_in* Client::populate_addr(string hname_or_ip, int port){
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
 
-  //string prt;
-  stringstream ss;
-  ss << port;
-  //prt = ss.str();
-
-  int error_num = getaddrinfo(hname_or_ip.c_str(), ss.str().c_str(), &hints, &ai);
+  int error_num = getaddrinfo(hname_or_ip.c_str(), itos(port).c_str(), &hints, &ai);
   if (error_num !=0) cout<< "getaddrinfo: "<< gai_strerror(error_num) <<endl;
   return (struct sockaddr_in*) ai->ai_addr;
 
@@ -236,6 +246,11 @@ struct peer_info* Client::get_peer_ptr(string ip){
   return NULL;
 }
 
+bool Client::is_peer_in_list(string ip){
+  for(int i=0; i<peers.size(); i++) if(peers.at(i).ip.compare(ip) == 0) {cout<<"peer in list!\n"; return true;}
+  cout<<"peer not in list\n";
+  return false;
+}
 
 int Client::send_cmds_to_server(){
     int send_ret=0;
@@ -253,18 +268,18 @@ int Client::send_cmds_to_server(){
 }
 
 void Client::cmd_list(){
+  sort(peers.begin(), peers.end(), sort_peers_by_port);
   cmd_success_start(LIST);
   for(int i =0; i<peers.size(); i++){
     struct peer_info peer = peers.at(i);
-    stringstream ss;
-    ss << peer.port;
-    string prt = ss.str();
-    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (peer.hostname).c_str(), (peer.ip).c_str(), prt.c_str());
+    
+    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (peer.hostname).c_str(), (peer.ip).c_str(), itos(peer.port).c_str());
   }
   cmd_end(LIST);
 
 }
 void Client::cmd_login(string host_ip, int port){
+  if(!is_valid_ip(host_ip)) {cmd_error(LOGIN); return;}
   int ret = connect_to_host(host_ip, port);
   if(ret != 0) {cmd_error(LOGIN); return;}
   loggedin = true;
@@ -274,6 +289,14 @@ void Client::cmd_login(string host_ip, int port){
 
 
 void Client::cmd_logout(){
+  //if(!loggedin) {cout<<"Already logged out\n"; cmd_error(LOGOUT);  return;}
+  int ret = close(my_socket);
+  if(ret !=0) {cmd_error(LOGOUT); return;}
+  FD_CLR(my_socket, &master_fds);
+  max_socket =0;
+  cmd_success_start(LOGOUT);
+  cmd_end(LOGOUT);
+
   loggedin = false;
   cout<< "Logged out from host '"<<  get_ip_from_sa(server_saddr)<<"'\n";
 }
@@ -307,9 +330,7 @@ void Client::serv_res_refresh(string data){
     getline(data_ss, token);
     peer.port = atoi(token.c_str());
 
-    //if(!peers.empty()) {cout << "When trying to reconstruct peers list found that peers list is not empty\n"; return; }
-    
-    peers.push_back(peer);
+    if(!is_peer_in_list(peer.ip)) peers.push_back(peer);
   }
 }
 

@@ -205,6 +205,7 @@ int Server::handle_new_conn_request(){
     new_host.sock = new_conn_sock;
     new_host.hostname = "NULL";
     new_host.ip = ip;
+    new_host.port=ntohs(cli_addr.sin_port);
     conn_his.push_back(new_host);
     cout<< "New client IP:"<<ip<<endl;
   } else {
@@ -326,6 +327,7 @@ void Server::relay_msg_to(string src_ip, string dest_ip, string msg){
   //check if the destined client has not blocked this client if so then dont do anything
   struct remotehos_info dest_host = get_host(dest_ip);
   if(dest_ip_blocking_src_ip(src_ip, dest_ip) || dest_ip.compare(src_ip) ==0 ) return;
+  if(!is_valid_ip(src_ip) || !is_valid_ip(dest_ip)) {cout<<"not valid ip\n"; return; }
 
   int bytes_sent = 0;
   //check if the destined client is logged in if not then buffer the messege
@@ -341,7 +343,7 @@ void Server::relay_msg_to(string src_ip, string dest_ip, string msg){
     if(client_cmds.at(0).compare(SEND) == 0) send_end_cmd(dest_host.sock, SEND_END, dest_ip);
 
     
-    get_host_ptr(dest_ip)->msg_bytes_rx += sizeof(msg);
+    get_host_ptr(dest_ip)->msg_bytes_rx += msg.size();
     event_msg_relayed(src_ip, dest_ip, msg);
 
   } else {
@@ -351,7 +353,7 @@ void Server::relay_msg_to(string src_ip, string dest_ip, string msg){
 
     } 
   
-  get_host_ptr(src_ip)->msg_bytes_tx += bytes_sent;
+  get_host_ptr(src_ip)->msg_bytes_tx += msg.size();
   
 }
 
@@ -370,10 +372,7 @@ void Server::send_current_client_list(struct remotehos_info host){
     struct remotehos_info h = conn_his.at(i);
     if(!h.loggedin || host.ip.compare(h.ip) ==0 ) continue;
 
-    //stringstream ss;
-    //ss << h.port;
-    //h_port = ss.str();
-
+  
     string send_data = "REFRESH:"+h.hostname+","+h.ip+","+itos(h.port);
 
     //send_ret = send(host.sock, send_data.c_str(),sizeof(send_data),0);
@@ -438,11 +437,11 @@ bool Server::host_in_history(string ip){
 
 bool Server::dest_ip_blocking_src_ip(string src_ip, string dest_ip){
   struct remotehos_info dest_host = get_host(dest_ip);
-  vector<struct remotehos_info> blocked_list = dest_host.blocked_hosts;
+  //vector<struct remotehos_info> blocked_list = dest_host.blocked_hosts;
 
-  int list_size = blocked_list.size();
+  int list_size = dest_host.blocked_hosts.size();
   for(uint i = 0; i< list_size; i++){
-    string blocked_ip = blocked_list.at(i).ip;
+    string blocked_ip = dest_host.blocked_hosts.at(i).ip;
     if(src_ip.compare(blocked_ip)== 0 ) return true;
   }
   return false;
@@ -496,6 +495,10 @@ struct remotehos_info Server::get_host(int sock){
   return host;
 }
 
+bool Server::is_valid_ip(string ip){
+  return host_in_history(ip);
+}
+
 int Server::custom_send(int socket, string msg){
   int send_ret = 0; 
   //msg += '\0';
@@ -547,9 +550,7 @@ void Server::cmd_list(){ //get list of logged in hosts sorted by port number
     struct remotehos_info h = conn_his.at(i);
     if(!h.loggedin) continue;
 
-    //stringstream ss;
-    //ss << h.port;
-    //string prt = ss.str();
+    
     cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), h.ip.c_str(), itos(h.port).c_str());
   }
   cmd_end("LIST");
@@ -580,18 +581,15 @@ void Server::cmd_blocked(string ip){
   struct remotehos_info host = get_host(ip);
   cmd_success_start("BLOCKED");
   
-  vector<struct remotehos_info> blocked_hosts = host.blocked_hosts;
-  if(blocked_hosts.empty()) cout<< ip<<" has not blocked anyone\n"; 
+  //vector<struct remotehos_info> blocked_hosts = host.blocked_hosts;
+  if(host.blocked_hosts.empty()) cout<< ip<<" has not blocked anyone\n"; 
 
-  sort(blocked_hosts.begin(), blocked_hosts.end(), sort_hosts_by_port);
+  sort(host.blocked_hosts.begin(), host.blocked_hosts.end(), sort_hosts_by_port);
   
   
-  for(int i =0; i< blocked_hosts.size(); i++){
-    struct remotehos_info h = blocked_hosts.at(i);
-    //stringstream ss;
-    //ss << h.port;
-    //string prt = ss.str();
-    
+  for(int i =0; i< host.blocked_hosts.size(); i++){
+    struct remotehos_info h = host.blocked_hosts.at(i);
+  
     cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), (h.ip).c_str(), itos(h.port).c_str());
   }
   cmd_end("BLOCKED");

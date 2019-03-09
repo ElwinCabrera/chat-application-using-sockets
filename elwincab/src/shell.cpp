@@ -2,6 +2,7 @@
 #include <string>
 #include <cstring>
 #include <vector>
+#include <ctype.h>
 #include "../include/shell.h"
 #include "../include/global.h"
 #include "../include/logger.h"
@@ -56,8 +57,27 @@ void event_msg_relayed(string from_ip, string to_ip, string msg){
 }
 
 bool is_valid_ip(string ip){
+  if(ip.size()>15) return false;
+  int octal_pos=1;
+  int digit_count_in_octal =0;
+  
+  if(!isdigit(ip.at(0))) return false;
+  if(ip.at(ip.size()-1) == '.') return false;
+  for(int i=0; i< ip.size(); i++){
+    if(isdigit(ip.at(i)) || ip.at(i) == '.') {
+      if(ip.at(i) == '.' && digit_count_in_octal == 0) return false;
+      if(ip.at(i) == '.' && digit_count_in_octal != 0) {octal_pos++; digit_count_in_octal =0;}
+      if( isdigit(ip.at(i)) && digit_count_in_octal >3) return false;
+      if( isdigit(ip.at(i))) digit_count_in_octal++;
+      
+    } else{
+      return false;
+    } 
 
-  return false;
+  }
+  if(octal_pos  != 4) return false;
+
+  return true;
 }
 
 string itos(int num){

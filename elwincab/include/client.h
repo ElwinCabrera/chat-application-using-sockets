@@ -40,6 +40,8 @@ private:
     vector<string> cmds;
     vector<struct peer_info> peers;
 
+    static bool sort_peers_by_port(struct peer_info peer1, struct peer_info peer2) { return peer1.port < peer2.port; }
+
     void handle_shell_cmds(string stdin_string);
     int receive_data_from_host();
     struct sockaddr_in* populate_addr(string hname_or_ip, int port);
@@ -47,6 +49,8 @@ private:
     string get_ip_from_sa(struct sockaddr_in *sa);
     struct peer_info get_peer(string ip);
     struct peer_info* get_peer_ptr(string ip);
+
+    bool is_peer_in_list(string ip);
 
     int send_cmds_to_server();
 
