@@ -304,8 +304,7 @@ int Server::recv_data_from_conn_sock(int idx_socket){
 
 void Server::block(struct remotehos_info host, string ip){
   struct remotehos_info remote_host = get_host(ip);
-  host.blocked_hosts.push_back(remote_host);
-  
+  get_host_ptr(host.ip)->blocked_hosts.push_back(remote_host);
   send_end_cmd(host.sock, BLOCK_END, host.ip);
 }
 
@@ -539,40 +538,6 @@ int Server::custom_recv(int socket, string &buffer ){
   return recv_ret;
 }
    
- 
-/*void swap(struct remotehos_info *host1, struct remotehos_info *host2) { 
-    struct remote_host temp = *a; 
-    *a = *b; 
-    *b = temp; 
-} 
-  
-
-int partition (int low, int high){ 
-    int pivot = conn_his.at(high).port;   
-    int i = (low - 1);  
-  
-    for (int j = low; j <= high- 1; j++){ 
-        
-        if (conn_his.at(j).port <= pivot){ 
-            i++;    
-            swap(&(conn_his.at(i)), &(conn_his.at(j))); 
-        } 
-    } 
-    swap(&(conn_his.at(i + 1)), &(conn_his.at(high))  ) ; 
-    return (i + 1); 
-} 
-  
-void quick_sort(int low, int high) { 
-    if (low < high) { 
-        
-        int pi = partition(low, high); 
-  
-        quickSort(low, pi - 1); 
-        quickSort(pi + 1, high); 
-    } 
-} */
-
-
 
                                   /* SHELL CMDs */
 
@@ -582,12 +547,14 @@ void Server::cmd_list(){ //get list of logged in hosts sorted by port number
   cmd_success_start("LIST");
   if(!conn_his.empty()) sort(conn_his.begin(), conn_his.end(), sort_hosts_by_port);
   
+  int count =1;
   for(int i =0; i<conn_his.size(); i++){
     struct remotehos_info h = conn_his.at(i);
     if(!h.loggedin) continue;
 
     
-    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), h.ip.c_str(), h.port);
+    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", count, (h.hostname).c_str(), h.ip.c_str(), h.port);
+    count++;
   }
   cmd_end("LIST");
 }
@@ -614,17 +581,17 @@ void Server::cmd_statistics(){
 
 void Server::cmd_blocked(string ip){
   //The output should display the hostname, IP address, and the listening port numbers of the bloked clents
-  struct remotehos_info host = get_host(ip);
+  struct remotehos_info *host = get_host_ptr(ip);
   cmd_success_start("BLOCKED");
   
   //vector<struct remotehos_info> blocked_hosts = host.blocked_hosts;
-  if(host.blocked_hosts.empty()) cout<< ip<<" has not blocked anyone\n"; 
+  if(host->blocked_hosts.empty()) cout<< ip<<" has not blocked anyone\n"; 
 
-  sort(host.blocked_hosts.begin(), host.blocked_hosts.end(), sort_hosts_by_port);
+  sort(host->blocked_hosts.begin(), host->blocked_hosts.end(), sort_hosts_by_port);
   
   
-  for(int i =0; i< host.blocked_hosts.size(); i++){
-    struct remotehos_info h = host.blocked_hosts.at(i);
+  for(int i =0; i< host->blocked_hosts.size(); i++){
+    struct remotehos_info h = host->blocked_hosts.at(i);
   
     cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), (h.ip).c_str(), h.port);
   }
