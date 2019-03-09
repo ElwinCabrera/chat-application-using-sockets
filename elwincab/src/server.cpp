@@ -581,17 +581,17 @@ void Server::cmd_statistics(){
 
 void Server::cmd_blocked(string ip){
   //The output should display the hostname, IP address, and the listening port numbers of the bloked clents
-  struct remotehos_info *host = get_host_ptr(ip);
+  struct remotehos_info host = get_host(ip);
   cmd_success_start("BLOCKED");
   
   //vector<struct remotehos_info> blocked_hosts = host.blocked_hosts;
-  if(host->blocked_hosts.empty()) cout<< ip<<" has not blocked anyone\n"; 
+  if(host.blocked_hosts.empty()) cout<< ip<<" has not blocked anyone\n"; 
 
-  sort(host->blocked_hosts.begin(), host->blocked_hosts.end(), sort_hosts_by_port);
+  sort(host.blocked_hosts.begin(), host.blocked_hosts.end(), sort_hosts_by_port);
   
   
-  for(int i =0; i< host->blocked_hosts.size(); i++){
-    struct remotehos_info h = host->blocked_hosts.at(i);
+  for(int i =0; i< host.blocked_hosts.size(); i++){
+    struct remotehos_info h = host.blocked_hosts.at(i);
   
     cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), (h.ip).c_str(), h.port);
   }
