@@ -58,6 +58,7 @@ Client::Client(string serv_port){
     me.hostname = my_hostname;
     me.ip= my_ip;
     me.port = server_port;
+    peers.push_back(me);
 }
 
 Client::~Client(){
