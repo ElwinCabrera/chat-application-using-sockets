@@ -227,6 +227,9 @@ int Client::connect_to_host(string server_ip, int port){
 
     int send_ret = custom_send(my_socket, "HOSTNAME "+my_hostname);
     if(send_ret == -1) { cout<< "could not send hostname to host"; perror(""); cout<<"\n"; }
+
+    send_ret = custom_send(my_socket, "PORT "+itos(server_port));
+    if(send_ret == -1) { cout<< "could not send PORT to host"; perror(""); cout<<"\n"; }
     return connect_ret;
 }
 

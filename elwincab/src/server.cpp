@@ -276,6 +276,10 @@ int Server::recv_data_from_conn_sock(int idx_socket){
       client_cmds.push_back(token);
       get_host_ptr(host.ip)->hostname = token;
     }
+    if(token.compare(PORT) == 0) {
+      getline(data_ss, token);
+      get_host_ptr(host.ip)->port = atoi(token.c_str()); 
+    }
 
     if(token.compare(LOGGEDIN) == 0) {
       get_host_ptr(host.ip)->loggedin = true;
@@ -534,6 +538,39 @@ int Server::custom_recv(int socket, string &buffer ){
 
   return recv_ret;
 }
+   
+ 
+/*void swap(struct remotehos_info *host1, struct remotehos_info *host2) { 
+    struct remote_host temp = *a; 
+    *a = *b; 
+    *b = temp; 
+} 
+  
+
+int partition (int low, int high){ 
+    int pivot = conn_his.at(high).port;   
+    int i = (low - 1);  
+  
+    for (int j = low; j <= high- 1; j++){ 
+        
+        if (conn_his.at(j).port <= pivot){ 
+            i++;    
+            swap(&(conn_his.at(i)), &(conn_his.at(j))); 
+        } 
+    } 
+    swap(&(conn_his.at(i + 1)), &(conn_his.at(high))  ) ; 
+    return (i + 1); 
+} 
+  
+void quick_sort(int low, int high) { 
+    if (low < high) { 
+        
+        int pi = partition(low, high); 
+  
+        quickSort(low, pi - 1); 
+        quickSort(pi + 1, high); 
+    } 
+} */
 
 
 
