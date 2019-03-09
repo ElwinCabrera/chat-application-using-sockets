@@ -208,11 +208,7 @@ int Server::handle_new_conn_request(){
     new_host.port=ntohs(cli_addr.sin_port);
     conn_his.push_back(new_host);
     cout<< "New client IP:"<<ip<<endl;
-  } else {
-    cout<<"Client "<<ip<<" logged back in\n";
-    check_and_send_stored_msgs(ip);
-    get_host_ptr(ip)->loggedin = true;
-  }
+  } 
   send_current_client_list(new_host);
   return new_conn_sock;
 }
@@ -279,6 +275,12 @@ int Server::recv_data_from_conn_sock(int idx_socket){
       getline(data_ss, token);
       client_cmds.push_back(token);
       get_host_ptr(host.ip)->hostname = token;
+    }
+
+    if(token.compare(LOGGEDIN) == 0) {
+      get_host_ptr(host.ip)->loggedin = true;
+      cout<<"Client "<<host.ip<<" logged back in\n";
+      check_and_send_stored_msgs(host.ip);  
     }
 
     if(token.compare(LOGOUT) == 0) get_host_ptr(host.ip)->loggedin = false; 
@@ -495,9 +497,6 @@ struct remotehos_info Server::get_host(int sock){
   return host;
 }
 
-bool Server::is_valid_ip(string ip){
-  return host_in_history(ip);
-}
 
 int Server::custom_send(int socket, string msg){
   int send_ret = 0; 
@@ -551,7 +550,7 @@ void Server::cmd_list(){ //get list of logged in hosts sorted by port number
     if(!h.loggedin) continue;
 
     
-    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), h.ip.c_str(), itos(h.port).c_str());
+    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), h.ip.c_str(), h.port);
   }
   cmd_end("LIST");
 }
@@ -590,7 +589,7 @@ void Server::cmd_blocked(string ip){
   for(int i =0; i< host.blocked_hosts.size(); i++){
     struct remotehos_info h = host.blocked_hosts.at(i);
   
-    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), (h.ip).c_str(), itos(h.port).c_str());
+    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), (h.ip).c_str(), h.port);
   }
   cmd_end("BLOCKED");
   

@@ -78,7 +78,7 @@ private:
   /*some helper and getter functions */
   bool host_in_history(string ip);
   bool dest_ip_blocking_src_ip(string src_ip, string dest_ip);
-  bool is_valid_ip(string ip);
+ 
   
   string get_sa_ip(struct sockaddr_in *sa);
   struct remotehos_info* get_host_ptr(string ip);

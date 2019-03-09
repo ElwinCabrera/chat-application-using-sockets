@@ -51,6 +51,7 @@ Client::Client(string serv_port){
     max_socket = my_socket;
 
     loggedin = false;
+    first_time_login = true;
     exit_program = false;
 }
 
@@ -123,6 +124,14 @@ void Client::handle_shell_cmds(string stdin_string){
             cout<< "example usage LOGIN <server-ip> <server-port>\n";
             cmd_error(cmds.at(0));
             return; 
+        }
+        if(!first_time_login && get_ip_from_sa(server_saddr).compare(cmds.at(1)) ==0) {
+          cout<< "Logged back in\n";
+          custom_send(my_socket, "LOGGEDIN ");
+          loggedin = true;
+          cmd_success_start(LOGIN);
+          cmd_end(LOGIN);
+          return;
         }
 
         cmd_login( cmds.at(1), atoi(cmds.at(2).c_str()) );
@@ -247,8 +256,7 @@ struct peer_info* Client::get_peer_ptr(string ip){
 }
 
 bool Client::is_peer_in_list(string ip){
-  for(int i=0; i<peers.size(); i++) if(peers.at(i).ip.compare(ip) == 0) {cout<<"peer in list!\n"; return true;}
-  cout<<"peer not in list\n";
+  for(int i=0; i<peers.size(); i++) if(peers.at(i).ip.compare(ip) == 0)  return true;
   return false;
 }
 
@@ -273,7 +281,7 @@ void Client::cmd_list(){
   for(int i =0; i<peers.size(); i++){
     struct peer_info peer = peers.at(i);
     
-    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (peer.hostname).c_str(), (peer.ip).c_str(), itos(peer.port).c_str());
+    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (peer.hostname).c_str(), (peer.ip).c_str(), peer.port);
   }
   cmd_end(LIST);
 
@@ -283,22 +291,21 @@ void Client::cmd_login(string host_ip, int port){
   int ret = connect_to_host(host_ip, port);
   if(ret != 0) {cmd_error(LOGIN); return;}
   loggedin = true;
+  first_time_login = false;
   cmd_success_start(LOGIN);
   cmd_end(LOGIN); 
 }
 
 
 void Client::cmd_logout(){
-  //if(!loggedin) {cout<<"Already logged out\n"; cmd_error(LOGOUT);  return;}
-  int ret = close(my_socket);
-  if(ret !=0) {cmd_error(LOGOUT); return;}
-  FD_CLR(my_socket, &master_fds);
-  max_socket =0;
-  cmd_success_start(LOGOUT);
-  cmd_end(LOGOUT);
+  if(!loggedin) {cout<<"Already logged out\n"; cmd_error(LOGOUT);  return;}
+  custom_send(my_socket,"LOGOUT ");
 
   loggedin = false;
   cout<< "Logged out from host '"<<  get_ip_from_sa(server_saddr)<<"'\n";
+  
+  cmd_success_start(LOGOUT);
+  cmd_end(LOGOUT);
 }
 void Client::cmd_exit(){
   int ret = close(my_socket);
