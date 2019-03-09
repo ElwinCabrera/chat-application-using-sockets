@@ -53,6 +53,11 @@ Client::Client(string serv_port){
     loggedin = false;
     first_time_login = true;
     exit_program = false;
+
+    struct peer_info me;
+    me.hostname = my_hostname;
+    me.ip= my_ip;
+    me.port = server_port;
 }
 
 Client::~Client(){
