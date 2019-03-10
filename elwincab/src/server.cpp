@@ -311,9 +311,10 @@ void Server::block(struct remotehos_info host, string new_block_ip){
 void Server::unblock(string src_ip, string unblock_ip){
   struct remotehos_info *host = get_host_ptr(src_ip);
 
-  for(int i=0; i< host->blocked_hosts.size(); i++){
-    if(host->blocked_hosts.at(i).ip.compare(unblock_ip) == 0){
-      host->blocked_hosts.erase(host->blocked_hosts.begin()+i);
+  for(int i=0; i< get_host_ptr(src_ip)->blocked_hosts.size(); i++){
+    if(get_host_ptr(src_ip)->blocked_hosts.at(i).ip.compare(unblock_ip) == 0){
+      get_host_ptr(src_ip)->blocked_hosts.erase(get_host_ptr(src_ip)->blocked_hosts.begin()+i);
+      return;
     }
   }
 }
