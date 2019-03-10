@@ -559,7 +559,8 @@ void Server::cmd_list(){ //get list of logged in hosts sorted by port number
     if(!h.loggedin) continue;
 
     
-    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", count, (h.hostname).c_str(), h.ip.c_str(), h.port);
+    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), h.ip.c_str(), h.port);
+    
     count++;
   }
   cmd_end("LIST");
