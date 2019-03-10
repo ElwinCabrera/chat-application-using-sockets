@@ -174,7 +174,7 @@ void Client::handle_shell_cmds(string stdin_string){
                     (cmds.size() != 2 || 
                     !is_valid_ip(cmds.at(1)) || 
                     !is_peer_in_list(cmds.at(1)) || 
-                     is_blocked(cmds.at(1)) )) { cmd_error(cmds.at(0)); return; }
+                     !is_blocked(cmds.at(1)) )) { cmd_error(cmds.at(0)); return; }
                   
                   
                   if(cmds.at(0).compare(REFRESH) == 0 && cmds.size() != 1){ cmd_error(cmds.at(0)); return; }
