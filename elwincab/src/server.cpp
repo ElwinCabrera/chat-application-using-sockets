@@ -212,7 +212,7 @@ int Server::handle_new_conn_request(){
     conn_his.push_back(new_host);
     cout<< "New client IP:"<<ip<<endl;
   } 
-  send_current_client_list(new_host);
+  //send_current_client_list(new_host);
   return new_conn_sock;
 }
 
@@ -280,6 +280,7 @@ int Server::recv_data_from_conn_sock(int idx_socket){
       getline(data_ss, token);
       client_cmds.push_back(token);
       get_host_ptr(host.ip)->hostname = token;
+      send_current_client_list(host);
     }
     if(token.compare(PORT) == 0) {
       getline(data_ss, token);
@@ -378,7 +379,7 @@ void Server::send_current_client_list(struct remotehos_info host){
 
   for(int i=0; i< conn_his.size(); i++){
     struct remotehos_info h = conn_his.at(i);
-    if(!h.loggedin || host.ip.compare(h.ip) ==0 ) continue;
+    if(!h.loggedin ) continue;
 
   
     string send_data = "REFRESH:"+h.hostname+","+h.ip+","+itos(h.port);
