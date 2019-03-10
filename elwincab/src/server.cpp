@@ -209,6 +209,7 @@ int Server::handle_new_conn_request(){
     new_host.hostname = "NULL";
     new_host.ip = ip;
     new_host.port=ntohs(cli_addr.sin_port);
+    send_current_client_list(new_host);
     conn_his.push_back(new_host);
     cout<< "New client IP:"<<ip<<endl;
   } 
@@ -285,7 +286,7 @@ int Server::recv_data_from_conn_sock(int idx_socket){
     if(token.compare(PORT) == 0) {
       getline(data_ss, token);
       get_host_ptr(host.ip)->port = atoi(token.c_str()); 
-      send_current_client_list(host);
+     
     }
 
     if(token.compare(LOGGEDIN) == 0) {
