@@ -280,11 +280,12 @@ int Server::recv_data_from_conn_sock(int idx_socket){
       getline(data_ss, token);
       client_cmds.push_back(token);
       get_host_ptr(host.ip)->hostname = token;
-      send_current_client_list(host);
+      
     }
     if(token.compare(PORT) == 0) {
       getline(data_ss, token);
       get_host_ptr(host.ip)->port = atoi(token.c_str()); 
+      send_current_client_list(host);
     }
 
     if(token.compare(LOGGEDIN) == 0) {
