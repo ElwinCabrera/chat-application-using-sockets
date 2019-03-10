@@ -253,6 +253,7 @@ int Server::recv_data_from_conn_sock(int idx_socket){
       getline(data_ss, token);
       client_cmds.push_back(token);
       relay_msg_to_all(host.ip,token);
+      get_host_ptr(host.ip)->msg_bytes_tx += token.size();
     }
       
     if(token.compare(BLOCK) == 0 ) {
@@ -272,6 +273,7 @@ int Server::recv_data_from_conn_sock(int idx_socket){
       client_cmds.push_back(to_ip);
       client_cmds.push_back(msg);
       relay_msg_to(host.ip, to_ip, msg);
+      get_host_ptr(host.ip)->msg_bytes_tx += msg.size();
     } 
 
     if(token.compare(HOSTNAME) == 0) {
@@ -332,8 +334,8 @@ void Server::relay_msg_to_all(string src_ip, string msg){
 void Server::relay_msg_to(string src_ip, string dest_ip, string msg){
   //check if the destined client has not blocked this client if so then dont do anything
   struct remotehos_info dest_host = get_host(dest_ip);
-  if(dest_ip_blocking_src_ip(src_ip, dest_ip) || dest_ip.compare(src_ip) ==0 ) return;
-  if( !is_valid_ip(dest_ip)) {cout<<"not valid ip\n"; return; }
+  if(dest_ip_blocking_src_ip(src_ip, dest_ip) ||dest_ip_blocking_src_ip(dest_ip, src_ip)|| dest_ip.compare(src_ip) ==0 ) return;
+  if( !is_valid_ip(dest_ip) || !host_in_history(dest_ip)) {cout<<"not valid ip\n"; return; }
 
   int bytes_sent = 0;
   //check if the destined client is logged in if not then buffer the messege
@@ -353,13 +355,13 @@ void Server::relay_msg_to(string src_ip, string dest_ip, string msg){
     event_msg_relayed(src_ip, dest_ip, msg);
 
   } else {
-    struct remotehos_info *h = get_host_ptr(dest_ip);
-    h->stored_msg_from_ips.push_back(src_ip);
-    h->stored_msgs.push_back(msg);
+  
+    get_host_ptr(dest_ip)->stored_msg_from_ips.push_back(src_ip);
+    get_host_ptr(dest_ip)->stored_msgs.push_back(msg);
 
     } 
   
-  get_host_ptr(src_ip)->msg_bytes_tx += msg.size();
+  //get_host_ptr(src_ip)->msg_bytes_tx += msg.size();
   
 }
 
