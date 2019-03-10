@@ -260,7 +260,7 @@ int Server::recv_data_from_conn_sock(int idx_socket){
     if(token.compare(UNBLOCK) == 0) {
       getline(data_ss, token);
       client_cmds.push_back(token);
-      unblock(host, token);
+      unblock(host.ip, token);
     } 
     if(token.compare(SEND) == 0) {
       string to_ip, msg;
@@ -302,21 +302,18 @@ int Server::recv_data_from_conn_sock(int idx_socket){
 
                             /* Operations that we may be asked by a remote host*/
 
-void Server::block(struct remotehos_info host, string ip){
-  struct remotehos_info remote_host = get_host(ip);
+void Server::block(struct remotehos_info host, string new_block_ip){
+  struct remotehos_info remote_host = get_host(new_block_ip);
   get_host_ptr(host.ip)->blocked_hosts.push_back(remote_host);
   send_end_cmd(host.sock, BLOCK_END, host.ip);
 }
 
-void Server::unblock(struct remotehos_info host, string new_block_ip){
-  int blocked_size = host.blocked_hosts.size();
-  for (uint i = 0; i < blocked_size; i++) {
-    struct remotehos_info blocked = host.blocked_hosts.at(i);
-    if(new_block_ip.compare(blocked.ip) == 0) {
-      host.blocked_hosts.erase(host.blocked_hosts.begin()+ i); 
+void Server::unblock(string src_ip, string unblock_ip){
+  struct remotehos_info *host = get_host_ptr(src_ip);
 
-      send_end_cmd(host.sock, UNBLOCK_END, host.ip);
-      return;
+  for(int i=0; i< host->blocked_hosts.size(); i++){
+    if(host->blocked_hosts.at(i).ip.compare(unblock_ip) == 0){
+      host->blocked_hosts.erase(host->blocked_hosts.begin()+i);
     }
   }
 }
@@ -332,7 +329,7 @@ void Server::relay_msg_to(string src_ip, string dest_ip, string msg){
   //check if the destined client has not blocked this client if so then dont do anything
   struct remotehos_info dest_host = get_host(dest_ip);
   if(dest_ip_blocking_src_ip(src_ip, dest_ip) || dest_ip.compare(src_ip) ==0 ) return;
-  if(!is_valid_ip(src_ip) || !is_valid_ip(dest_ip)) {cout<<"not valid ip\n"; return; }
+  if( !is_valid_ip(dest_ip)) {cout<<"not valid ip\n"; return; }
 
   int bytes_sent = 0;
   //check if the destined client is logged in if not then buffer the messege
@@ -587,13 +584,13 @@ void Server::cmd_blocked(string ip){
   //vector<struct remotehos_info> blocked_hosts = host.blocked_hosts;
   if(host.blocked_hosts.empty()) cout<< ip<<" has not blocked anyone\n"; 
 
-  sort(host.blocked_hosts.begin(), host.blocked_hosts.end(), sort_hosts_by_port);
+  //sort(host.blocked_hosts.begin(), host.blocked_hosts.end(), sort_hosts_by_port);
   
   
   for(int i =0; i< host.blocked_hosts.size(); i++){
-    struct remotehos_info h = host.blocked_hosts.at(i);
+    //struct remotehos_info h = host.blocked_hosts.at(i);
   
-    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), (h.ip).c_str(), h.port);
+    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (host.blocked_hosts.at(i).hostname).c_str(), (host.blocked_hosts.at(i).ip).c_str(), host.blocked_hosts.at(i).port);
   }
   cmd_end("BLOCKED");
   

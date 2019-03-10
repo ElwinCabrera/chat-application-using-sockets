@@ -63,7 +63,7 @@ private:
   
   /* Operations that we may be asked by a remote host*/
   void block(struct remotehos_info host, string new_block_ip);
-  void unblock(struct remotehos_info host, string unblock_ip);
+  void unblock(string src_ip, string unblock_ip);
   void relay_msg_to_all(string src_ip, string msg);
   void relay_msg_to(string src_ip, string dst_ip, string msg);
   void logout(struct remotehos_info host);
