@@ -125,7 +125,7 @@ void Client::handle_shell_cmds(string stdin_string){
         cmd_list();
     } else if(cmds.at(0).compare(LOGIN) == 0){
         
-        if(cmds.size() != 3) { 
+        if(cmds.size() != 3 || !is_valid_ip(cmds.at(1)) || !is_valid_port(cmds.at(2))) { 
             cout<< "error: command 'LOGIN' takes 2 arguments\n";
             cout<< "example usage LOGIN <server-ip> <server-port>\n";
             cmd_error(cmds.at(0));
@@ -160,10 +160,23 @@ void Client::handle_shell_cmds(string stdin_string){
                     return;
                   }
 
-                  if(cmds.at(0).compare(SEND) == 0 && (cmds.size() < 1 || !is_peer_in_list(cmds.at(1)) ) ){ cmd_error(cmds.at(0)); return; }
+                  if(cmds.at(0).compare(SEND) == 0 && (cmds.size() < 1 || !is_valid_ip(cmds.at(1)) || !is_peer_in_list(cmds.at(1)) ) ){ cmd_error(cmds.at(0)); return; }
                   if(cmds.at(0).compare(BROADCAST) == 0 && cmds.size() <1) {cmd_error(cmds.at(0)); return; }
-                  if(cmds.at(0).compare(BLOCK) == 0 && (cmds.size() != 2 || !is_peer_in_list(cmds.at(1))  ) ) { cmd_error(cmds.at(0)); return; }
-                  if(cmds.at(0).compare(UNBLOCK) == 0 && (cmds.size() != 2 || !is_peer_in_list(cmds.at(1))  )) { cmd_error(cmds.at(0)); return; }
+                  
+                  if(cmds.at(0).compare(BLOCK) == 0 && 
+                    (cmds.size() != 2 || 
+                    !is_valid_ip(cmds.at(1)) || 
+                    !is_peer_in_list(cmds.at(1) ) || 
+                    !is_blocked(cmds.at(1)) ) ) { cmd_error(cmds.at(0)); return; }
+                  
+                  
+                  if(cmds.at(0).compare(UNBLOCK) == 0 && 
+                    (cmds.size() != 2 || 
+                    !is_valid_ip(cmds.at(1)) || 
+                    !is_peer_in_list(cmds.at(1)) || 
+                     is_blocked(cmds.at(1)) )) { cmd_error(cmds.at(0)); return; }
+                  
+                  
                   if(cmds.at(0).compare(REFRESH) == 0 && cmds.size() != 1){ cmd_error(cmds.at(0)); return; }
 
                   
@@ -182,14 +195,8 @@ void Client::handle_shell_cmds(string stdin_string){
 
 int Client::receive_data_from_host(){
   string token;
-  //char data[BUFFER_MAX];
   string data;
-  //int recv(int sockfd, void *buf, int len, int flags);
-  //int recv_ret = recv(my_socket, data, sizeof(data),0);
   int recv_ret = custom_recv(my_socket, data);
-  //if(recv_ret < 0 ) cout << "Failed to receive data, error#"<<errno<<endl;
-
-  //cout<<"Got '"<<data<<"' from server"<<endl;  // DEBUG
 
   stringstream data_ss(data);
   getline(data_ss, token, ':');
@@ -202,11 +209,6 @@ int Client::receive_data_from_host(){
      token.compare(BLOCK_END) == 0    ||
      token.compare(UNBLOCK_END) == 0  ) serv_res_success(token);
   
-  //if(token.compare(SEND_END) ==0) serv_res_success(token);
-  //if(token.compare(BROADCAST_END) ==0) serv_res_success(token); 
-  //if(token.compare(BLOCK_END) ==0) serv_res_success(token);
-  //if(token.compare(UNBLOCK_END) ==0) serv_res_success(token); 
-
   return recv_ret;
 
 }
@@ -268,6 +270,21 @@ bool Client::is_peer_in_list(string ip){
   for(int i=0; i<peers.size(); i++) if(peers.at(i).ip.compare(ip) == 0)  return true;
   return false;
 }
+bool Client::is_blocked(string ip){
+  
+  for(int i=0; i<blocked_hosts.size(); i++){
+    if(blocked_hosts.at(i).compare(ip)==0) return true;
+  }
+  return false;
+}
+
+void Client::remove_from_blocked_hosts(string ip){
+
+  for(int i=0; i<blocked_hosts.size(); i++){
+    if(blocked_hosts.at(i).compare(ip)==0) { blocked_hosts.erase(blocked_hosts.begin()+i); return;}
+  }
+
+}
 
 int Client::send_cmds_to_server(){
     int send_ret=0;
@@ -277,6 +294,9 @@ int Client::send_cmds_to_server(){
         msg += cmds.at(i);
         if(i != cmds_size -1) msg+=" "; // we don't want to add a space at the end
     }
+
+    if(cmds.at(0).compare(BLOCK) == 0) blocked_hosts.push_back(cmds.at(1));
+    if(cmds.at(0).compare(UNBLOCK) == 0) remove_from_blocked_hosts(cmds.at(1));
     
     if(loggedin) 
     send_ret = custom_send(my_socket, msg);
@@ -296,7 +316,6 @@ void Client::cmd_list(){
 
 }
 void Client::cmd_login(string host_ip, int port){
-  if(!is_valid_ip(host_ip)) {cmd_error(LOGIN); return;}
   int ret = connect_to_host(host_ip, port);
   if(ret != 0) {cmd_error(LOGIN); return;}
   loggedin = true;

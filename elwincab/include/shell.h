@@ -21,4 +21,5 @@ void event_msg_relayed(string from_ip, string to_ip, string msg);
 
 string itos(int num);
 bool is_valid_ip(string ip);
+bool is_valid_port(string port);
 #endif // SHELL_H

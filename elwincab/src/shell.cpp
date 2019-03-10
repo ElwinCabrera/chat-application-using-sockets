@@ -80,6 +80,15 @@ bool is_valid_ip(string ip){
   return true;
 }
 
+bool is_valid_port(string port){
+  if(port.size()>4) return false;
+
+  for(int i=0; i< port.size(); i++){
+    if(!isdigit(port.at(i))) return false; 
+  }
+  return true;
+}
+
 string itos(int num){
   string ret;
   vector<char> chars;

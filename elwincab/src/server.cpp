@@ -172,7 +172,10 @@ void Server::handle_shell_cmds(string cmd){
   if(cmds.at(0).compare(PORT) == 0) cmd_port(portnum);
   if(cmds.at(0).compare(LIST) == 0) cmd_list();
   if(cmds.at(0).compare(STATISTICS) == 0) cmd_statistics();
-  if(cmds.at(0).compare(BLOCKED) == 0) cmd_blocked(cmds.at(0));
+  if(cmds.at(0).compare(BLOCKED) == 0) {
+    if(cmds.size() != 2 || !is_valid_ip(cmds.at(1)) || !host_in_history(cmds.at(1))) { cmd_error(BLOCKED); return;}
+    cmd_blocked(cmds.at(1));
+  }
 }
 
 /*if this function returns a number other than 0 then the new connection could not be established*/
@@ -582,10 +585,9 @@ void Server::cmd_blocked(string ip){
   struct remotehos_info host = get_host(ip);
   cmd_success_start("BLOCKED");
   
-  //vector<struct remotehos_info> blocked_hosts = host.blocked_hosts;
   if(host.blocked_hosts.empty()) cout<< ip<<" has not blocked anyone\n"; 
 
-  //sort(host.blocked_hosts.begin(), host.blocked_hosts.end(), sort_hosts_by_port);
+  sort(host.blocked_hosts.begin(), host.blocked_hosts.end(), sort_hosts_by_port);
   
   
   for(int i =0; i< host.blocked_hosts.size(); i++){

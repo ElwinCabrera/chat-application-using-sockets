@@ -39,6 +39,7 @@ private:
     bool first_time_login;
     bool exit_program;
     vector<string> cmds;
+    vector<string> blocked_hosts;
     vector<struct peer_info> peers;
 
     static bool sort_peers_by_port(struct peer_info peer1, struct peer_info peer2) { return peer1.port < peer2.port; }
@@ -52,6 +53,9 @@ private:
     struct peer_info* get_peer_ptr(string ip);
 
     bool is_peer_in_list(string ip);
+    bool is_blocked(string ip);
+    void remove_from_blocked_hosts(string ip);
+
 
     int send_cmds_to_server();
 
