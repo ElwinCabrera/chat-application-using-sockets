@@ -381,7 +381,7 @@ void Server::send_current_client_list(struct remotehos_info host){
 
   for(int i=0; i< conn_his.size(); i++){
     struct remotehos_info h = conn_his.at(i);
-    if(!h.loggedin ) continue;
+    if(!h.loggedin || host.ip.compare(h.ip) ==0 ) continue;
 
   
     string send_data = "REFRESH:"+h.hostname+","+h.ip+","+itos(h.port);
@@ -558,9 +558,7 @@ void Server::cmd_list(){ //get list of logged in hosts sorted by port number
     struct remotehos_info h = conn_his.at(i);
     if(!h.loggedin) continue;
 
-    
-    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", i+1, (h.hostname).c_str(), h.ip.c_str(), h.port);
-    
+    cse4589_print_and_log("%-5d%-35s%-20s%-8d\n", count, (h.hostname).c_str(), h.ip.c_str(), h.port);
     count++;
   }
   cmd_end("LIST");
